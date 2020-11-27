@@ -1,13 +1,57 @@
 ---
-title: "R Notebook"
+title: "AI-naloga-unfinished"
 output: html_notebook
 ---
 
+Na začetku sva uvozila podatke z gumbom v RStudio imenovanem "Import Dataset" in sicer sva izbrala opcijo "From Text(base)". Nato sva ustvarila novo delovno spremenljivko "data", da ostane prvotna spremenljivka nespremenjena. 
 
 
+```{r}
+data <- dataSem1
+data$regija <- as.factor(data$regija)
+data$namembnost <- as.factor(data$namembnost)
+data$norm_poraba <- as.factor(data$norm_poraba)
+
+head(data)
+```
+Atribute "regija", "namembnost" in "norm_poraba" sva faktorizirala, da programski jezik razbere zalogo vrednosti. V tabeli zgoraj je prikazanih prvih nekaj vrstic. 
+
+```{r}
+data$datum <- as.Date(data$datum)
+head(data)
+
+```
+Lastnost atributa "datum" nastavimo na <date>.
+
+```{r}
+newData <- week(data$datum)
+
+data$teden <- newData
+
+newNewData <- month(data$datum)
+data$mesec <- newNewData
+
+head(data)
+```
+V tem delu sva dodala nova atributa "teden" in "mesec" za lažje nadaljno delo. Za pomoč sva uporabila knjižnico "lubridate".
+
+```{r}
+x <- is.weekend(data$datum)
+data$vikend <- x
+
+summary(data)
+```
+Zgornja koda prikazuje kako sva dodala atribut "vikend", ki ima vrednost TRUE, če je dan sobota ali nedelja, oziroma FALSE, če je delovni dan. Pomagala sva si s knjižnico "chron".
+
+```{r}
+tmp <- which(data$stavba == 100, data$ura == 15)
+#tmp
+index <- tmp, match(c(1:nrow(data)), FALSE)
+data[index]
+summary(tmp)
 
 
-
+```
 
 
 
