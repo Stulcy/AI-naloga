@@ -1,1 +1,3 @@
 # AI-naloga
+
+Tole dela
