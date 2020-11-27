@@ -3,6 +3,7 @@ title: "AI-naloga-unfinished"
 output: html_notebook
 ---
 
+
 Na začetku sva uvozila podatke z gumbom v RStudio imenovanem "Import Dataset" in sicer sva izbrala opcijo "From Text(base)". Nato sva ustvarila novo delovno spremenljivko "data", da ostane prvotna spremenljivka nespremenjena. 
 
 
@@ -43,18 +44,68 @@ summary(data)
 ```
 Zgornja koda prikazuje kako sva dodala atribut "vikend", ki ima vrednost TRUE, če je dan sobota ali nedelja, oziroma FALSE, če je delovni dan. Pomagala sva si s knjižnico "chron".
 
+
 ```{r}
-tmp <- which(data$stavba == 100, data$ura == 15)
+data$UNIX <- as.numeric(as.POSIXct(paste(data$datum, data$ura, sep=" ")))
+#data
+```
+Ustvarimo splošen atribut za čas, ki nam omogoča lažje sortiranje.
+
+
+```{r}
+#tmp <- which(data$stavba == 100, data$ura == 15)
 #tmp
-index <- tmp, match(c(1:nrow(data)), FALSE)
-data[index]
-summary(tmp)
+#index <- match(tmp, c(1:nrow(data)), FALSE)
+#data[index]
+#summary(tmp)
 
+#tmp <- data[, "stavba"] == 100 & data[, "ura"] == 17
+#data[data[, "stavba"] == 100,]
+#rm(tmp)
 
+#data[data[, "stavba"] == 100 & data[, "ura"] == 17,]
+
+#a <- order(data[data[, "stavba"] == 100 & data[, "ura"] == 17,]$datum)
 ```
 
 
 
+
+```{r}
+rm(a)
+a <- order(data$stavba, data$ura, data$UNIX)
+sortedDF <- data[a,]
+#data
+sortedDF[sortedDF[, "stavba"] == 100,]
+```
+Dataframe sortiramo po številki stavbe, uri meritve in UNIX času.
+
+
+```{r}
+vect = vector()
+starTemp = 0
+uraMeritve = 0
+for (row in 1:nrow(sortedDF))
+{
+  if(uraMeritve == sortedDF[row, "ura"]) {
+    vect <- c(vect, starTemp)
+    starTemp = sortedDF[row, "temp_zraka"]
+  }
+  else {
+    uraMeritve = sortedDF[row, "ura"]
+    vect <- c(vect, sortedDF[row, "temp_zraka"])
+  }
+  #print(row)
+}
+
+vect
+```
+
+
+```{r}
+v <- c(v, 4)
+v
+```
 
 
 
