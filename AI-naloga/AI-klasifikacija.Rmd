@@ -83,6 +83,9 @@ for (row in 1:nrow(sortedDF))
 
 ```
 
+```{r}
+sortedDF$norm_poraba <- factor(sortedDF$norm_poraba, levels=c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA"))
+```
 
 ```{r}
 sortedDF$prev_temp <- vect
@@ -134,8 +137,7 @@ Z zanko se sprehodimo po vsaki meritvi v matriki in izračunamo povprečje najve
 ## Večinski razred
 
 ```{r}
-X = factor(sortedDF$norm_poraba, levels=c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA"))
-plot(X, main = "Porazdelitev primerov glede na normirano stopnjo porabe")
+plot(sortedDF$norm_poraba, main = "Porazdelitev primerov glede na normirano stopnjo porabe")
 ```
 
 ```{r}
@@ -178,39 +180,163 @@ for (dt in dt_list) {
 }
 ```
 
+### Analiza odločitvenega drevesa
 ```{r}
+# Tabela zmot
+cat("Pravilnost rezultatov \n")
 for(i in 1:11){
-  cat("Mesec =", i+1)
-  print(table(predicted[[i]],filter(sortedDF, mesec == i+1)$norm_poraba))
+  cat("Mesec =", i+1, " ->  ")
+  q <- filter(sortedDF, mesec == i+1)$norm_poraba == predicted[[i]]
+  cat(mean(q))
+  #tab <- table(predicted[[i]],filter(sortedDF, mesec == i+1)$norm_poraba)
+  cat(" +/-", sd(q)/sqrt(length(q)), "\n")
+}
+```
+
+
+```{r}
+cat("Senzitivnost za 'SREDNJA'\n")
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predicted[[i]])
+  cat(tab["SREDNJA", "SREDNJA"]/sum(tab["SREDNJA",]), "\n")
 }
 ```
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
-
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
-
 ```{r}
-plot(cars)
+cat("Specifičnost za 'SREDNJA'\n")
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predicted[[i]])
+  cat((sum(tab)-sum(tab["SREDNJA",])-sum(tab[,"SREDNJA"])+tab["SREDNJA","SREDNJA"])/(sum(tab)-sum(tab[,"SREDNJA"])), "\n")
+}
 ```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+```{r}
+cat("Preciznost za 'SREDNJA'\n")
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predicted[[i]])
+  cat(tab["SREDNJA", "SREDNJA"]/sum(tab[,"SREDNJA"]), "\n")
+}
+```
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+```{r}
+i = 1
+predictedMat <- list()
+for (dt in dt_list) {
+  tempDF <- filter(sortedDF, mesec == i+1)
+  predictedMat[[i]] <- predict(dt, tempDF, type = "prob")
+  i = i + 1
+}
+col.order <- c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA")
+head(predictedMat[[1]][,col.order])
+```
+
+```{r}
+observedMat <- list()
+for (i in 1:11) {
+  observedMat[[i]] <- class.ind(factor(filter(sortedDF, mesec == i+1)$norm_poraba, levels=c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA")))
+}
+head(observedMat[[1]])
+```
+
+
+```{r}
+print("Barier's test", quote = F)
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  bar <- sum((observedMat[[i]] - predictedMat[[i]]) ^ 2) / nrow(predictedMat[[i]])
+  cat(bar, "\n")
+}
+```
+
+```{r}
+p0 <- table(sortedDF$norm_poraba)/nrow(sortedDF)
+cat("Trivialni model\n")
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  p0Mat <- matrix(rep(p0, times=nrow(observedMat[[i]])), nrow = nrow(observedMat[[i]]), byrow = T)
+  colnames(p0Mat) <- names(p0)
+  bar <- sum((observedMat[[i]] - p0Mat) ^ 2) / nrow(p0Mat)
+  cat(bar, "\n")
+}
+
+```
+> Tale trivialen model je kao boljša metoda kot pa najino drevo. To je treba še enkrat preverit, ker se ne sklada z rezultatom zgoraj. - Najbrž zaradi tega, ker so rezultati v p0Mat povprečje od vseh vrednosti, namesto primerljive učne vrednosti, kot so v posameznih učnih množicah, na katerih potem izdelamo odločitveno drevo
+
+```{r Informacijska vsebina odgovora}
+inf.score <- function(trainClass, testClass, predMat) {
+  result <- 0
+  priors <- table(trainClass) / length(trainClass)
+  
+  for (i in 1:nrow(predMat)) {
+    p.prior <- priors[testClass[i]]
+    p.posterior <- predMat[i, testClass[i]]
+    
+    if(p.posterior >= p.prior) {
+      result <- result - log2(p.prior) + log2(p.posterior)
+    }
+    else
+      result <- result + log2(1-p.prior) - log2(1-p.posterior)
+  }
+  
+  result/nrow(predMat)
+}
+```
+
+```{r}
+cat("Informacijska vsebina odgovora\n")
+for (i in 1:11) {
+  cat("Mesec =", i+1, " ->  ")
+  cat(inf.score(filter(sortedDF, mesec <= i)$norm_poraba, filter(sortedDF, mesec == i+1)$norm_poraba, predictedMat[[i]]), "\n")
+}
+```
+
+```{r}
+cat("Informacijska vsebina trivialnega modela\n")
+for (i in 1:11) {
+  cat("Mesec =", i+1, " ->  ")
+  p0Mat <- matrix(rep(p0, times=nrow(filter(sortedDF, mesec == i+1))), nrow = nrow(filter(sortedDF, mesec == i+1)), byrow = T)
+  cat(inf.score(filter(sortedDF, mesec <= i)$norm_poraba, filter(sortedDF, mesec == i+1)$norm_poraba, p0Mat), "\n")
+}
+```
+> Spet podoben problem, kot zgoraj pri trivialnem modelu. Vse vrednosti bi morale biti 0, ampak najbrž niso zaradi napačnega izračuna povprečne porazdelitve v p0 in potem generirani matriki p0Mat
+
+
+
+
+
+
+
+
+
+
+
+## Testni chunk
+
+```{r}
+head(p0Mat)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
