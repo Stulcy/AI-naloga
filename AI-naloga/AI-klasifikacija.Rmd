@@ -3,6 +3,7 @@ title: "AI-naloga-unfinished"
 output: html_notebook
 ---
 
+## Obdelava podatkov in dodajanje atributov
 
 Na začetku sva uvozila podatke z gumbom v RStudio imenovanem "Import Dataset" in sicer sva izbrala opcijo "From Text(base)". Nato sva ustvarila novo delovno spremenljivko "data", da ostane prvotna spremenljivka nespremenjena. 
 
@@ -40,7 +41,7 @@ V tem delu sva dodala nova atributa "teden" in "mesec" za lažje nadaljno delo. 
 x <- is.weekend(data$datum)
 data$vikend <- x
 
-summary(data)
+#summary(data)
 ```
 Zgornja koda prikazuje kako sva dodala atribut "vikend", ki ima vrednost TRUE, če je dan sobota ali nedelja, oziroma FALSE, če je delovni dan. Pomagala sva si s knjižnico "chron".
 
@@ -52,27 +53,10 @@ data$UNIX <- as.numeric(as.POSIXct(paste(data$datum, data$ura, sep=" ")))
 Ustvarimo splošen atribut za čas, ki nam omogoča lažje sortiranje.
 
 
-```{r}
-#tmp <- which(data$stavba == 100, data$ura == 15)
-#tmp
-#index <- match(tmp, c(1:nrow(data)), FALSE)
-#data[index]
-#summary(tmp)
-
-#tmp <- data[, "stavba"] == 100 & data[, "ura"] == 17
-#data[data[, "stavba"] == 100,]
-#rm(tmp)
-
-#data[data[, "stavba"] == 100 & data[, "ura"] == 17,]
-
-#a <- order(data[data[, "stavba"] == 100 & data[, "ura"] == 17,]$datum)
-```
-
-
 
 
 ```{r}
-rm(a)
+#rm(a)
 a <- order(data$stavba, data$ura, data$UNIX)
 sortedDF <- data[a,]
 #data
@@ -100,42 +84,82 @@ for (row in 1:nrow(sortedDF))
 vect
 ```
 
-
 ```{r}
 sortedDF$prev_temp <- vect
 head(sortedDF)
 ```
+Z zgornjo kodo smo vsaki meritvi v sortirani matriki poiskali meritev temperature prejšnjega dne in ji le to dopisali v poseben stolpec z atributi.
+
+
+
 ```{r}
 vect = vector()
 starTemp = 0
 uraMeritve = 0
+substract = 0
+beginning = 0
+stevec = 0
 for (row in 1:nrow(sortedDF))
 {
+  if(beginning < row-7)
+    stevec = row-7
+  else
+    stevec = beginning
   if(uraMeritve == sortedDF[row, "ura"]) {
-    r <- sortedDF[, "stavba"] == sortedDF[row, "stavba"] & sortedDF[, "ura"] == sortedDF[row, "ura"] & sortedDF[, "datum"] == sortedDF[row, "datum"] - 7
-    for (i in r:(row-1))
+    starTemp = 0
+    #r <- which(sortedDF[, "stavba"] == sortedDF[row, "stavba"] & sortedDF[, "ura"] == sortedDF[row, "ura"] & sortedDF[, "datum"] == sortedDF[row, "datum"] - substract)
+    for (i in stevec:(row-1))
       starTemp = starTemp + sortedDF[i, "temp_zraka"]
-    avgTemp = starTemp / (row - r - 1)
+    avgTemp = starTemp / (row - stevec)
     vect <- c(vect, avgTemp)
   }
   else {
+    beginning = row
     uraMeritve = sortedDF[row, "ura"]
     vect <- c(vect, sortedDF[row, "temp_zraka"])
   }
   starTemp = sortedDF[row, "temp_zraka"]
 }
+
+vect
 ```
-
-
 
 ```{r}
-for ( i in 1:10) {
-  if (i == 2) {
-    i = 8
-  }
-  print(i)
-}
+sortedDF$temp_teden <- vect
 ```
+Z zanko se sprehodimo po vsaki meritvi v matriki in izračunamo povprečje največ zadnjih 7 meritev za isto stavbo ob isti uri. Povprečno temperaturo zapišemo v stolpec z imenom "temp_teden".
+
+
+
+## Večinski razred
+
+```{r}
+X = factor(sortedDF$norm_poraba, levels=c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA"))
+plot(X, main = "Porazdelitev primerov glede na normirano stopnjo porabe")
+```
+```{r}
+summary(X)
+```
+Večinski parameter je vrednost "SREDNJA", ki predstavlja 76.435 vrednosti od 206.785, kar je 0,3696 od celotne zaloge elementov.
+
+
+## Odločitveno drevo
+
+```{r}
+tempDF <- sortedDF
+drops <- c("poraba")
+tempDF <- tempDF[ , !(names(tempDF) %in% drops)]
+dt <- rpart(norm_poraba ~ ., data = tempDF)
+```
+
+```{r}
+rpart.plot(dt)
+```
+
+
+
+
+
 
 
 
