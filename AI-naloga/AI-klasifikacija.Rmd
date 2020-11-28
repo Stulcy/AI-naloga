@@ -76,7 +76,7 @@ rm(a)
 a <- order(data$stavba, data$ura, data$UNIX)
 sortedDF <- data[a,]
 #data
-sortedDF[sortedDF[, "stavba"] == 100,]
+sortedDF
 ```
 Dataframe sortiramo po številki stavbe, uri meritve in UNIX času.
 
@@ -89,13 +89,12 @@ for (row in 1:nrow(sortedDF))
 {
   if(uraMeritve == sortedDF[row, "ura"]) {
     vect <- c(vect, starTemp)
-    starTemp = sortedDF[row, "temp_zraka"]
   }
   else {
     uraMeritve = sortedDF[row, "ura"]
     vect <- c(vect, sortedDF[row, "temp_zraka"])
   }
-  #print(row)
+  starTemp = sortedDF[row, "temp_zraka"]
 }
 
 vect
@@ -103,12 +102,40 @@ vect
 
 
 ```{r}
-v <- c(v, 4)
-v
+sortedDF$prev_temp <- vect
+head(sortedDF)
+```
+```{r}
+vect = vector()
+starTemp = 0
+uraMeritve = 0
+for (row in 1:nrow(sortedDF))
+{
+  if(uraMeritve == sortedDF[row, "ura"]) {
+    r <- sortedDF[, "stavba"] == sortedDF[row, "stavba"] & sortedDF[, "ura"] == sortedDF[row, "ura"] & sortedDF[, "datum"] == sortedDF[row, "datum"] - 7
+    for (i in r:(row-1))
+      starTemp = starTemp + sortedDF[i, "temp_zraka"]
+    avgTemp = starTemp / (row - r - 1)
+    vect <- c(vect, avgTemp)
+  }
+  else {
+    uraMeritve = sortedDF[row, "ura"]
+    vect <- c(vect, sortedDF[row, "temp_zraka"])
+  }
+  starTemp = sortedDF[row, "temp_zraka"]
+}
 ```
 
 
 
+```{r}
+for ( i in 1:10) {
+  if (i == 2) {
+    i = 8
+  }
+  print(i)
+}
+```
 
 
 
