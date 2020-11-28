@@ -5,7 +5,7 @@ output: html_notebook
 
 ## Obdelava podatkov in dodajanje atributov
 
-Na začetku sva uvozila podatke z gumbom v RStudio imenovanem "Import Dataset" in sicer sva izbrala opcijo "From Text(base)". Nato sva ustvarila novo delovno spremenljivko "data", da ostane prvotna spremenljivka nespremenjena. 
+Na začetku uvozimo podatke z gumbom v RStudio imenovanem "Import Dataset" in sicer izberemo opcijo "From Text(base)". Nato ustvarimo novo delovno spremenljivko "data", da ostane prvotna spremenljivka nespremenjena. 
 
 
 ```{r}
@@ -16,7 +16,7 @@ data$norm_poraba <- as.factor(data$norm_poraba)
 
 head(data)
 ```
-Atribute "regija", "namembnost" in "norm_poraba" sva faktorizirala, da programski jezik razbere zalogo vrednosti. V tabeli zgoraj je prikazanih prvih nekaj vrstic. 
+Atribute "regija", "namembnost" in "norm_poraba" faktoriziramo, da programski jezik razbere zalogo vrednosti. V tabeli zgoraj je prikazanih prvih nekaj vrstic. 
 
 ```{r}
 data$datum <- as.Date(data$datum)
@@ -35,7 +35,7 @@ data$mesec <- newNewData
 
 head(data)
 ```
-V tem delu sva dodala nova atributa "teden" in "mesec" za lažje nadaljno delo. Za pomoč sva uporabila knjižnico "lubridate".
+V tem delu dodamo nova atributa "teden" in "mesec" za lažje nadaljno delo. Za pomoč uporabimo knjižnico "lubridate".
 
 ```{r}
 x <- is.weekend(data$datum)
@@ -43,7 +43,7 @@ data$vikend <- x
 
 #summary(data)
 ```
-Zgornja koda prikazuje kako sva dodala atribut "vikend", ki ima vrednost TRUE, če je dan sobota ali nedelja, oziroma FALSE, če je delovni dan. Pomagala sva si s knjižnico "chron".
+Zgornja koda prikazuje kako dodamo atribut "vikend", ki ima vrednost TRUE, če je dan sobota ali nedelja, oziroma FALSE, če je delovni dan. Pomagamo si s knjižnico "chron".
 
 
 ```{r}
@@ -81,14 +81,14 @@ for (row in 1:nrow(sortedDF))
   starTemp = sortedDF[row, "temp_zraka"]
 }
 
-vect
 ```
+
 
 ```{r}
 sortedDF$prev_temp <- vect
 head(sortedDF)
 ```
-Z zgornjo kodo smo vsaki meritvi v sortirani matriki poiskali meritev temperature prejšnjega dne in ji le to dopisali v poseben stolpec z atributi.
+S kodo zgornjih dveh odlomkov vsaki meritvi v sortirani matriki poiščemo meritev temperature prejšnjega dne in ji le to dopišemo v poseben stolpec z atributi.
 
 
 
@@ -155,14 +155,130 @@ dt <- rpart(norm_poraba ~ ., data = tempDF)
 ```{r}
 rpart.plot(dt)
 ```
+```{r}
+tempDFJan <- filter(sortedDF, mesec == 1)
+
+drops <- c("poraba")
+tempDFJan <- tempDFJan[ , !(names(tempDFJan) %in% drops)]
+dt1 <- rpart(norm_poraba ~ ., data = tempDFJan)
+
+rpart.plot(dt1)
+```
+
+Za izluščenje le posameznega meseca se uporabi knjižnica "dplyr", kjer s pomočjo fukcije "filter" izluščimo le podatke določenega meseca. Zgornji primer je za Januar.
 
 
+```{r}
+tempDFFeb <- filter(sortedDF, mesec == 2)
 
+drops <- c("poraba")
+tempDFFeb <- tempDFFeb[ , !(names(tempDFFeb) %in% drops)]
+dt2 <- rpart(norm_poraba ~ ., data = tempDFFeb)
 
+rpart.plot(dt2)
+```
 
+```{r}
+tempDFMar <- filter(sortedDF, mesec == 3)
 
+drops <- c("poraba")
+tempDFMar <- tempDFMar[ , !(names(tempDFMar) %in% drops)]
+dt3 <- rpart(norm_poraba ~ ., data = tempDFMar)
 
+rpart.plot(dt3)
+```
 
+```{r}
+tempDFApr <- filter(sortedDF, mesec == 4)
+
+drops <- c("poraba")
+tempDFApr <- tempDFApr[ , !(names(tempDFApr) %in% drops)]
+dt4 <- rpart(norm_poraba ~ ., data = tempDFApr)
+
+rpart.plot(dt4)
+```
+
+```{r}
+tempDFMay <- filter(sortedDF, mesec == 5)
+
+drops <- c("poraba")
+tempDFMay <- tempDFMay[ , !(names(tempDFMay) %in% drops)]
+dt5 <- rpart(norm_poraba ~ ., data = tempDFMay)
+
+rpart.plot(dt5)
+```
+
+```{r}
+tempDFJun <- filter(sortedDF, mesec == 6)
+
+drops <- c("poraba")
+tempDFJun <- tempDFJun[ , !(names(tempDFJun) %in% drops)]
+dt6 <- rpart(norm_poraba ~ ., data = tempDFJun)
+
+rpart.plot(dt6)
+```
+
+```{r}
+tempDFJul <- filter(sortedDF, mesec == 7)
+
+drops <- c("poraba")
+tempDFJul <- tempDFJul[ , !(names(tempDFJul) %in% drops)]
+dt7 <- rpart(norm_poraba ~ ., data = tempDFJul)
+
+rpart.plot(dt7)
+```
+
+```{r}
+tempDFAug <- filter(sortedDF, mesec == 8)
+
+drops <- c("poraba")
+tempDFAug <- tempDFAug[ , !(names(tempDFAug) %in% drops)]
+dt8 <- rpart(norm_poraba ~ ., data = tempDFAug)
+
+rpart.plot(dt8)
+```
+
+```{r}
+tempDFSep <- filter(sortedDF, mesec == 9)
+
+drops <- c("poraba")
+tempDFSep <- tempDFSep[ , !(names(tempDFSep) %in% drops)]
+dt9 <- rpart(norm_poraba ~ ., data = tempDFSep)
+
+rpart.plot(dt9)
+```
+
+```{r}
+tempDFOct <- filter(sortedDF, mesec == 10)
+
+drops <- c("poraba")
+tempDFOct <- tempDFOct[ , !(names(tempDFOct) %in% drops)]
+dt10 <- rpart(norm_poraba ~ ., data = tempDFOct)
+
+rpart.plot(dt10)
+```
+
+```{r}
+tempDFNov <- filter(sortedDF, mesec == 11)
+
+drops <- c("poraba")
+tempDFNov <- tempDFNov[ , !(names(tempDFNov) %in% drops)]
+dt11 <- rpart(norm_poraba ~ ., data = tempDFNov)
+
+rpart.plot(dt11)
+```
+
+```{r}
+tempDFDec <- filter(sortedDF, mesec == 12)
+
+drops <- c("poraba")
+tempDFDec <- tempDFDec[ , !(names(tempDFDec) %in% drops)]
+dt12 <- rpart(norm_poraba ~ ., data = tempDFDec)
+
+rpart.plot(dt12)
+```
+
+Zgoraj so narejena drevesa za vseh 12 mesecev razen Januarja, ki je že narejen.
 
 
 
