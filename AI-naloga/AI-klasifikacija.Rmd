@@ -137,6 +137,7 @@ Z zanko se sprehodimo po vsaki meritvi v matriki in izračunamo povprečje najve
 X = factor(sortedDF$norm_poraba, levels=c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA"))
 plot(X, main = "Porazdelitev primerov glede na normirano stopnjo porabe")
 ```
+
 ```{r}
 summary(X)
 ```
@@ -164,6 +165,29 @@ Zgoraj so narejena drevesa za vseh 11 mesecev razen decembra, ki se samo testira
 for(m in dt_list)
   rpart.plot(m)
 ```
+
+
+
+```{r}
+i = 1
+predicted <- list()
+for (dt in dt_list) {
+  tempDF <- filter(sortedDF, mesec == i+1)
+  predicted[[i]] <- predict(dt, tempDF, type = "class")
+  i = i + 1
+}
+```
+
+```{r}
+for(i in 1:11){
+  cat("Mesec =", i+1)
+  print(table(predicted[[i]],filter(sortedDF, mesec == i+1)$norm_poraba))
+}
+```
+
+
+
+
 
 
 
