@@ -1,6 +1,8 @@
 ---
 title: "AI-naloga-unfinished"
-output: html_notebook
+output:
+  pdf_document: default
+  html_notebook: default
 ---
 
 ## Obdelava podatkov in dodajanje atributov
@@ -9,6 +11,8 @@ Na začetku uvozimo podatke z gumbom v RStudio imenovanem "Import Dataset" in si
 
 
 ```{r}
+dataSem1 <- read.csv("../../AI-naloga/dataSem1.txt", stringsAsFactors=TRUE)
+
 data <- dataSem1
 data$regija <- as.factor(data$regija)
 data$namembnost <- as.factor(data$namembnost)
@@ -26,6 +30,8 @@ head(data)
 Lastnost atributa "datum" nastavimo na <date>.
 
 ```{r}
+library(lubridate)
+
 newData <- week(data$datum)
 
 data$teden <- newData
@@ -38,6 +44,8 @@ head(data)
 V tem delu dodamo nova atributa "teden" in "mesec" za lažje nadaljno delo. Za pomoč uporabimo knjižnico "lubridate".
 
 ```{r}
+library(chron)
+
 x <- is.weekend(data$datum)
 data$vikend <- x
 
