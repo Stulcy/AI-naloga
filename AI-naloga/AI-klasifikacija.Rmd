@@ -337,6 +337,111 @@ head(p0Mat)
 
 
 
+#################################################################################
+#                                REGRESIJA                                      #
+#################################################################################
+
+LINEARNA REGRESIJA    
+```{r}
+set.seed(0)
+sel <- sample(1:nrow(sortedDF), as.integer(nrow(sortedDF) * 0.7), F)
+train <- sortedDF[sel,]
+test <- sortedDF[-sel,]
+model <- lm(poraba ~ ., train)
+predicted <- predict(model, test)
+observed <- test$poraba
+plot(observed)
+points(predicted, col="red")
+
+```
+Nastavimo seed na 0, da je ob vsakem zagonu enaka naključnost.Vsi podakti se razdelijo na testno in 
+učno množico v razmerju 3:7. Model se naredi glede na opazovano spremenljivko "poraba".Graf za te
+podatke je prikazan zgoraj.
+
+```{r}
+mae <- function(obs, pred)
+{
+	mean(abs(obs - pred))
+}
+
+
+mse <- function(obs, pred)
+{
+	mean((obs - pred)^2)
+}
+
+mae(observed, predicted)
+mse(observed, predicted)
+sqrt(mse(observed, predicted))
+```
+Oznaka "mae" predstavlja srednjo absolutno napako, "mse" pa srednjo kvadratno napako. Če za kvadratno napako
+želimo to napako v enakih enotah kot je naša spremenljivka "poraba" moramo "mse" še postaviti pod koren. V izpisu zgoraj zgornja številka predstavlja absolutno napako, spodnji dve pa kvadratno (prva normalno, druga korenjeno).
+
+```{r}
+meanVal <- mean(train$poraba)
+meanVal
+
+predTrivial <- rep(meanVal, nrow(test))
+mae(observed, predTrivial)
+mse(observed, predTrivial)
+sqrt(mse(observed, predTrivial))
+
+```
+Izračunamo povprečno koncentracijo porabe v testni množici(meanVal). Nato izračunamo še srednjo absolutno in
+srednjo kvadratno napako za trivialen model, ki ga zgradimo s funkcijo "rep(meanVal, nrow(test)).
+
+Opazimo, da ima naš linearni model manjši obe napaki, kar pomeni, da se je linearni model nekaj naučil in je
+boljši od trivialnega modela.
+
+
+```{r}
+rmae <- function(obs, pred, mean.val) 
+{  
+	sum(abs(obs - pred)) / sum(abs(obs - mean.val))
+}
+
+rmse <- function(obs, pred, mean.val) 
+{  
+	sum((obs - pred)^2)/sum((obs - mean.val)^2)
+}
+
+
+rmae(observed, predicted, mean(train$poraba))
+rmse(observed, predicted, mean(train$poraba))
+
+```
+S pomočjo relativnih mer ocenimo naš linearni model v primerjavi s trivialnim. Zgornja vrnjena številka prikazuje
+relativno srednjo absolutno napako, spodnja pa relativno srednjo kvadratno napako. Ker so vrednosti manjše od 1, to 
+pomeni, da je linearni model bojši od trivialnega.
+
+
+PRECNO PREVERJANJE (LEAVE ONE OUT)
+
+```{r}
+predicted <- vector()
+
+for (i in 1:nrow(sortedDF))
+{	
+	model <- lm(poraba ~ ., sortedDF[-i,])
+	predicted[i] <- predict(model, sortedDF[i,])
+}
+
+plot(data$poraba)
+points(predicted, col="red")
+
+mae(data$poraba, predicted)
+mse(data$poraba, predicted)
+
+rmae(data$poraba, predicted, mean(data$poraba))
+rmse(data$poraba, predicted, mean(data$poraba))
+```
+```{r}
+sortedDF
+hist(log(sortedDF$padavine))
+#log(sortedDF$povrsina)
+```
+
+
 
 
 
