@@ -415,7 +415,7 @@ relativno srednjo absolutno napako, spodnja pa relativno srednjo kvadratno napak
 pomeni, da je linearni model bojši od trivialnega.
 
 
-PRECNO PREVERJANJE (LEAVE ONE OUT)
+PREČNO PREVERJANJE (LEAVE ONE OUT)
 
 ```{r}
 predicted <- vector()
@@ -426,22 +426,53 @@ for (i in 1:nrow(sortedDF))
 	predicted[i] <- predict(model, sortedDF[i,])
 }
 
-plot(data$poraba)
+plot(sortedDF$poraba)
 points(predicted, col="red")
 
-mae(data$poraba, predicted)
-mse(data$poraba, predicted)
+mae(sortedDF$poraba, predicted)
+mse(sortedDF$poraba, predicted)
 
-rmae(data$poraba, predicted, mean(data$poraba))
-rmse(data$poraba, predicted, mean(data$poraba))
+rmae(sortedDF$poraba, predicted, mean(sortedDF$poraba))
+rmse(sortedDF$poraba, predicted, mean(sortedDF$poraba))
 ```
 ```{r}
-sortedDF
-hist(log(sortedDF$padavine))
-#log(sortedDF$povrsina)
+dataTrans <- sortedDF[,c("datum", "regija", "namembnost", "norm_poraba", "vikend", "ura", "stavba", "leto_izgradnje", "temp_zraka", "temp_rosisca", "oblacnost", "padavine", "pritisk", "smer_vetra", "teden", "mesec", "UNIX", "prev_temp", "temp_teden")]
+dataTrans$logpovrsina <- log1p(sortedDF$povrsina)
+dataTrans$loghitrost_vetra <- log1p(sortedDF$hitrost_vetra)
+dataTrans$logporaba <- log1p(sortedDF$poraba)
+summary(dataTrans)
+```
+Atribute se transformira s funkcijo log1p(x), da se izognemo težavam, ki nastanejo, če je ena izmed vrednosti
+atributa enaka 0. V izvirni obliki obdržimo kategorične in tiste zvezne atribute, ki imajo približno normalno
+porazdelitev, ostale transformiramo.
+
+```{r}
+logPredicted <- vector()
+
+for (i in 1:nrow(dataTrans))
+{	
+	model <- lm(logporaba ~ ., dataTrans[-i,])
+	logPredicted[i] <- predict(model, dataTrans[i,])
+}
 ```
 
+Na novih podatkih se izvede prečno preverjanje po principu "leave one out".
 
+```{r}
+predicted <- expm1(logPredicted)
+
+plot(sortedDF$poraba)
+points(predicted, col="red")
+
+mae(sortedDF$poraba, predicted)
+mse(sortedDF$poraba, predicted)
+
+rmae(sortedDF$poraba, predicted, mean(sortedDF$poraba))
+rmse(sortedDF$poraba, predicted, mean(sortedDF$poraba))
+```
+
+Dobljene napovedi transformiramo v originalni prostor z metodo expm1(x). Izpisane so napake na enak način
+kot pri prejšnjih odlomkih kode ("mae", "mse", "rmae", "rmse").
 
 
 
