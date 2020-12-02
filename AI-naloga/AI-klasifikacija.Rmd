@@ -93,9 +93,7 @@ for (row in 1:nrow(sortedDF))
 
 ```{r}
 sortedDF$norm_poraba <- factor(sortedDF$norm_poraba, levels=c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA"))
-```
 
-```{r}
 sortedDF$prev_temp <- vect
 head(sortedDF)
 ```
@@ -131,12 +129,11 @@ for (row in 1:nrow(sortedDF))
   }
   starTemp = sortedDF[row, "temp_zraka"]
 }
-
-vect
 ```
 
 ```{r}
 sortedDF$temp_teden <- vect
+head(sortedDF)
 ```
 Z zanko se sprehodimo po vsaki meritvi v matriki in izračunamo povprečje največ zadnjih 7 meritev za isto stavbo ob isti uri. Povprečno temperaturo zapišemo v stolpec z imenom "temp_teden".
 
@@ -149,7 +146,7 @@ plot(sortedDF$norm_poraba, main = "Porazdelitev primerov glede na normirano stop
 ```
 
 ```{r}
-summary(X)
+summary(sortedDF$norm_poraba)
 ```
 Večinski parameter je vrednost "SREDNJA", ki predstavlja 76.435 vrednosti od 206.785, kar je 0,3696 od celotne zaloge elementov.
 
@@ -157,6 +154,9 @@ Večinski parameter je vrednost "SREDNJA", ki predstavlja 76.435 vrednosti od 20
 ## Odločitveno drevo
 
 ```{r}
+library(dplyr)
+library(rpart)
+
 dt_list <- list()
 
 for(m in 1:11) {
@@ -172,6 +172,8 @@ Zgoraj so narejena drevesa za vseh 11 mesecev razen decembra, ki se samo testira
 
 
 ```{r}
+library(rpart.plot)
+
 for(m in dt_list)
   rpart.plot(m)
 ```
@@ -245,6 +247,8 @@ head(predictedMat[[1]][,col.order])
 ```
 
 ```{r}
+library(nnet)
+
 observedMat <- list()
 for (i in 1:11) {
   observedMat[[i]] <- class.ind(factor(filter(sortedDF, mesec == i+1)$norm_poraba, levels=c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA")))
