@@ -11,7 +11,7 @@ Na začetku uvozimo podatke z gumbom v RStudio imenovanem "Import Dataset" in si
 
 
 ```{r}
-dataSem1 <- read.csv("../../AI-naloga/dataSem1.txt", stringsAsFactors=TRUE)
+dataSem1 <- read.csv("../dataSem1.txt", stringsAsFactors=TRUE)
 
 data <- dataSem1
 data$regija <- as.factor(data$regija)
