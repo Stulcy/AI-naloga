@@ -331,8 +331,19 @@ for (i in 1:11) {
 ## Testni chunk
 
 ```{r}
-head(p0Mat)
+
 ```
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -341,12 +352,45 @@ head(p0Mat)
 #                                REGRESIJA                                      #
 #################################################################################
 
-LINEARNA REGRESIJA    
+```{r}
+dataForRegression = subset(sortedDF, select = -c(norm_poraba, teden, UNIX, prev_temp, temp_teden))
+
+dataForRegressionJan <- filter(dataForRegression, mesec == 1)
+for (i in 1:ncol(dataForRegressionJan))
+  dataForRegressionJan[,i] <- as.factor(dataForRegressionJan[,i])
+
+summary(dataForRegression)
+```
+
+Podatke za regresijo se vzame iz že urejenih podatkov "sortedDF" brez "norm_poraba" in se jih faktorizira. Zaradi velike količine podatkov se preveri za vsak mesec posebej(npr. zgoraj za januar).
+
+```{r}
+library(CORElearn)
+
+dataForRegressionJan = subset(dataForRegressionJan, select = -c(mesec))
+sort(attrEval(poraba ~ ., dataForRegressionJan, "InfGain"),  decreasing = TRUE)
+```
+Preveri se kateri atributi največ pripomorejo pri napovedovanju ciljne spremenljivke. Izbere se najboljše, torej
+tiste, ki imajo najvišjo oceno.
+
+
+
+######################
+# LINEARNA REGRESIJA #   
+######################
+
+```{r}
+dataForRegression = subset(dataForRegression, select = -c(mesec, vikend, padavine, regija, ura, namembnost, oblacnost))
+summary(dataForRegression)
+```
+Množica podatkov se zmanjša na 9 atributov, ki najbolj pripomorejo k napovedovanju atributa "poraba".
+
 ```{r}
 set.seed(0)
-sel <- sample(1:nrow(sortedDF), as.integer(nrow(sortedDF) * 0.7), F)
-train <- sortedDF[sel,]
-test <- sortedDF[-sel,]
+sel <- sample(1:nrow(dataForRegression), as.integer(nrow(dataForRegression) * 0.7), F)
+train <- dataForRegression[sel,]
+test <- dataForRegression[-sel,]
+
 model <- lm(poraba ~ ., train)
 predicted <- predict(model, test)
 observed <- test$poraba
@@ -356,7 +400,7 @@ points(predicted, col="red")
 ```
 Nastavimo seed na 0, da je ob vsakem zagonu enaka naključnost.Vsi podakti se razdelijo na testno in 
 učno množico v razmerju 3:7. Model se naredi glede na opazovano spremenljivko "poraba".Graf za te
-podatke je prikazan zgoraj.
+podatke je prikazan zgoraj.V tem primeru je linearna regresija narejena za vse mesece.
 
 ```{r}
 mae <- function(obs, pred)
@@ -414,16 +458,20 @@ relativno srednjo absolutno napako, spodnja pa relativno srednjo kvadratno napak
 pomeni, da je linearni model bojši od trivialnega.
 
 
+
+#####################
+# regresijsko drevo #
+#####################
+
 ```{r}
-dataTrans <- sortedDF[,c("datum", "regija", "namembnost", "norm_poraba", "vikend", "ura", "stavba", "leto_izgradnje", "temp_zraka", "temp_rosisca", "oblacnost", "padavine", "pritisk", "smer_vetra", "teden", "mesec", "UNIX", "prev_temp", "temp_teden")]
-dataTrans$logpovrsina <- log1p(sortedDF$povrsina)
-dataTrans$loghitrost_vetra <- log1p(sortedDF$hitrost_vetra)
-dataTrans$logporaba <- log1p(sortedDF$poraba)
-summary(dataTrans)
+rt.model <- rpart(poraba ~ ., data=train)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
 ```
-Atribute se transformira s funkcijo log1p(x), da se izognemo težavam, ki nastanejo, če je ena izmed vrednosti
-atributa enaka 0. V izvirni obliki obdržimo kategorične in tiste zvezne atribute, ki imajo približno normalno
-porazdelitev, ostale transformiramo.
+Z vsemi podatki, torej 30% testna množica, 70% učna se dobi zgornje rešitve. Prikazano je regresijsko drevo,
+prva vrnjena številka je srednja absolutna napaka, druga pa relativna srednja absolutna napaka.
 
 
 ##################
@@ -433,15 +481,11 @@ porazdelitev, ostale transformiramo.
 ```{r}
 library(randomForest)
 
-rf.model <- randomForest(quality ~ ., train)
+rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
 predicted <- predict(rf.model, test)
-mae(test$quality, predicted)
-rmae(test$quality, predicted, mean(train$quality))
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
 ```
-
-
-
-
 
 
 
