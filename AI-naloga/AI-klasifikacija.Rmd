@@ -10,8 +10,8 @@ output:
 Na začetku uvozimo podatke z gumbom v RStudio imenovanem "Import Dataset" in sicer izberemo opcijo "From Text(base)". Nato ustvarimo novo delovno spremenljivko "data", da ostane prvotna spremenljivka nespremenjena. 
 
 
-```{r Uvoz podatkov}
-dataSem1 <- read.csv("../dataSem1.txt", stringsAsFactors=TRUE)
+```{r}
+dataSem1 <- read.csv("../../AI-naloga/dataSem1.txt", stringsAsFactors=TRUE)
 
 data <- dataSem1
 data$regija <- as.factor(data$regija)
@@ -22,14 +22,14 @@ head(data)
 ```
 Atribute "regija", "namembnost" in "norm_poraba" faktoriziramo, da programski jezik razbere zalogo vrednosti. V tabeli zgoraj je prikazanih prvih nekaj vrstic. 
 
-```{r Določitev tipa atributa "datum"}
+```{r}
 data$datum <- as.Date(data$datum)
 head(data)
 
 ```
 Lastnost atributa "datum" nastavimo na <date>.
 
-```{r Dodan atribut mesec}
+```{r}
 library(lubridate)
 
 newData <- week(data$datum)
@@ -43,32 +43,37 @@ head(data)
 ```
 V tem delu dodamo nova atributa "teden" in "mesec" za lažje nadaljno delo. Za pomoč uporabimo knjižnico "lubridate".
 
-```{r Dodan atribut vikend}
+```{r}
 library(chron)
 
 x <- is.weekend(data$datum)
 data$vikend <- x
+
+#summary(data)
 ```
 Zgornja koda prikazuje kako dodamo atribut "vikend", ki ima vrednost TRUE, če je dan sobota ali nedelja, oziroma FALSE, če je delovni dan. Pomagamo si s knjižnico "chron".
 
 
-```{r Dodan atribut UNIX}
+```{r}
 data$UNIX <- as.numeric(as.POSIXct(paste(data$datum, data$ura, sep=" ")))
+#data
 ```
 Ustvarimo splošen atribut za čas, ki nam omogoča lažje sortiranje.
 
 
 
 
-```{r Ustvarjen kronološko sortiran seznam}
+```{r}
+#rm(a)
 a <- order(data$stavba, data$ura, data$UNIX)
 sortedDF <- data[a,]
+#data
 sortedDF
 ```
 Dataframe sortiramo po številki stavbe, uri meritve in UNIX času.
 
 
-```{r Izračun podatkov meritve prejšnjega dne}
+```{r}
 vect = vector()
 starTemp = 0
 uraMeritve = 0
@@ -86,7 +91,7 @@ for (row in 1:nrow(sortedDF))
 
 ```
 
-```{r Dodan atribut temperatura prejšnjega dne}
+```{r}
 sortedDF$norm_poraba <- factor(sortedDF$norm_poraba, levels=c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA"))
 
 sortedDF$prev_temp <- vect
@@ -96,7 +101,7 @@ S kodo zgornjih dveh odlomkov vsaki meritvi v sortirani matriki poiščemo merit
 
 
 
-```{r Izračun temperature prejšnjih 7 dni}
+```{r}
 vect = vector()
 starTemp = 0
 uraMeritve = 0
@@ -111,7 +116,7 @@ for (row in 1:nrow(sortedDF))
     stevec = beginning
   if(uraMeritve == sortedDF[row, "ura"]) {
     starTemp = 0
-    
+    #r <- which(sortedDF[, "stavba"] == sortedDF[row, "stavba"] & sortedDF[, "ura"] == sortedDF[row, "ura"] & sortedDF[, "datum"] == sortedDF[row, "datum"] - substract)
     for (i in stevec:(row-1))
       starTemp = starTemp + sortedDF[i, "temp_zraka"]
     avgTemp = starTemp / (row - stevec)
@@ -126,7 +131,7 @@ for (row in 1:nrow(sortedDF))
 }
 ```
 
-```{r Dodan atribut temperatura prejšnjih 7 dni}
+```{r}
 sortedDF$temp_teden <- vect
 head(sortedDF)
 ```
@@ -136,33 +141,135 @@ Z zanko se sprehodimo po vsaki meritvi v matriki in izračunamo povprečje najve
 
 ## Večinski razred
 
-```{r Graf razporeditve po normirani porabi}
+```{r}
 plot(sortedDF$norm_poraba, main = "Porazdelitev primerov glede na normirano stopnjo porabe")
 ```
 
-```{r Številski opis normirane porabe}
+```{r}
 summary(sortedDF$norm_poraba)
 ```
 Večinski parameter je vrednost "SREDNJA", ki predstavlja 76.435 vrednosti od 206.785, kar je 0,3696 od celotne zaloge elementov.
 
-### Analiza večinskega modela
 
-```{r Matrika dejanskih vrednosti nominirane temperature}
-library(nnet)
+## Odločitveno drevo
+
+```{r}
 library(dplyr)
+library(rpart)
+
+dt_list <- list()
+
+for(m in 1:11) {
+  tempDF <- filter(sortedDF, mesec <= m)
+  
+  drops <- c("poraba")
+  tempDF <- tempDF[ , !(names(tempDF) %in% drops)]
+  dt_list[[m]] <- rpart(norm_poraba ~ ., data = tempDF)
+}
+```
+Za izluščenje le posameznega meseca se uporabi knjižnica "dplyr", kjer s pomočjo fukcije "filter" izluščimo le podatke določenega meseca.
+Zgoraj so narejena drevesa za vseh 11 mesecev razen decembra, ki se samo testira.
+
+
+```{r}
+library(rpart.plot)
+
+for(m in dt_list)
+  rpart.plot(m)
+```
+
+
+
+```{r}
+i = 1
+predicted <- list()
+for (dt in dt_list) {
+  tempDF <- filter(sortedDF, mesec == i+1)
+  predicted[[i]] <- predict(dt, tempDF, type = "class")
+  i = i + 1
+}
+```
+
+### Analiza odločitvenega drevesa
+```{r}
+# Tabela zmot
+cat("Pravilnost rezultatov \n")
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  q <- filter(sortedDF, mesec == i+1)$norm_poraba == predicted[[i]]
+  cat(mean(q))
+  #tab <- table(predicted[[i]],filter(sortedDF, mesec == i+1)$norm_poraba)
+  cat(" +/-", sd(q)/sqrt(length(q)), "\n")
+}
+```
+
+
+```{r}
+cat("Senzitivnost za 'SREDNJA'\n")
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predicted[[i]])
+  cat(tab["SREDNJA", "SREDNJA"]/sum(tab["SREDNJA",]), "\n")
+}
+```
+
+
+
+```{r}
+cat("Specifičnost za 'SREDNJA'\n")
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predicted[[i]])
+  cat((sum(tab)-sum(tab["SREDNJA",])-sum(tab[,"SREDNJA"])+tab["SREDNJA","SREDNJA"])/(sum(tab)-sum(tab[,"SREDNJA"])), "\n")
+}
+```
+
+
+```{r}
+cat("Preciznost za 'SREDNJA'\n")
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predicted[[i]])
+  cat(tab["SREDNJA", "SREDNJA"]/sum(tab[,"SREDNJA"]), "\n")
+}
+```
+
+```{r}
+i = 1
+predictedMat <- list()
+for (dt in dt_list) {
+  tempDF <- filter(sortedDF, mesec == i+1)
+  predictedMat[[i]] <- predict(dt, tempDF, type = "prob")
+  i = i + 1
+}
+col.order <- c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA")
+head(predictedMat[[1]][,col.order])
+```
+
+```{r}
+library(nnet)
+
 observedMat <- list()
 for (i in 1:11) {
   observedMat[[i]] <- class.ind(factor(filter(sortedDF, mesec == i+1)$norm_poraba, levels=c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA")))
 }
 head(observedMat[[1]])
 ```
-Za izluščenje le posameznega meseca se uporabi knjižnica "dplyr", kjer s pomočjo fukcije "filter" izluščimo le podatke določenega meseca.
 
-```{r Barierjev test večinskih modelov}
 
-cat("Večinski model\n")
+```{r}
+print("Barier's test", quote = F)
 for(i in 1:11){
-  p0 <- table(filter(sortedDF, mesec <= i+1)$norm_poraba)/nrow(filter(sortedDF, mesec <= i+1))
+  cat("Mesec =", i+1, " ->  ")
+  bar <- sum((observedMat[[i]] - predictedMat[[i]]) ^ 2) / nrow(predictedMat[[i]])
+  cat(bar, "\n")
+}
+```
+
+```{r}
+p0 <- table(sortedDF$norm_poraba)/nrow(sortedDF)
+cat("Trivialni model\n")
+for(i in 1:11){
   cat("Mesec =", i+1, " ->  ")
   p0Mat <- matrix(rep(p0, times=nrow(observedMat[[i]])), nrow = nrow(observedMat[[i]]), byrow = T)
   colnames(p0Mat) <- names(p0)
@@ -171,9 +278,9 @@ for(i in 1:11){
 }
 
 ```
+> Tale trivialen model je kao boljša metoda kot pa najino drevo. To je treba še enkrat preverit, ker se ne sklada z rezultatom zgoraj. - Najbrž zaradi tega, ker so rezultati v p0Mat povprečje od vseh vrednosti, namesto primerljive učne vrednosti, kot so v posameznih učnih množicah, na katerih potem izdelamo odločitveno drevo
 
-
-```{r Funkcija informacijske vsebine odgovora}
+```{r Informacijska vsebina odgovora}
 inf.score <- function(trainClass, testClass, predMat) {
   result <- 0
   priors <- table(trainClass) / length(trainClass)
@@ -193,132 +300,7 @@ inf.score <- function(trainClass, testClass, predMat) {
 }
 ```
 
-
-```{r Izračun informacijske vsebine trivialnega modela}
-cat("Informacijska vsebina trivialnega modela\n")
-for (i in 1:11) {
-  p0 <- table(filter(sortedDF, mesec <= i+1)$norm_poraba)/nrow(filter(sortedDF, mesec <= i+1))
-  cat("Mesec =", i+1, " ->  ")
-  p0Mat <- matrix(rep(p0, times=nrow(filter(sortedDF, mesec == i+1))), nrow = nrow(filter(sortedDF, mesec == i+1)), byrow = T)
-  cat(inf.score(filter(sortedDF, mesec <= i)$norm_poraba, filter(sortedDF, mesec == i+1)$norm_poraba, p0Mat), "\n")
-}
-```
-
-
-## Odločitveno drevo
-
-```{r Izračun odločitvenih dreves}
-library(rpart)
-
-dt_list <- list()
-
-for(m in 1:11) {
-  tempDF <- filter(sortedDF, mesec <= m)
-  
-  drops <- c("poraba")
-  tempDF <- tempDF[ , !(names(tempDF) %in% drops)]
-  dt_list[[m]] <- rpart(norm_poraba ~ ., data = tempDF, cp = 0)
-  tab <- printcp(dt_list[[m]])
-  row <- which.min(tab[,"xerror"])
-  th <- mean(c(tab[row, "CP"], tab[row-1, "CP"]))
-  dt_list[[m]] <- prune(dt_list[[m]], cp = th)
-}
-
-rm(tab)
-rm(row)
-rm(th)
-```
-Zgoraj so narejena drevesa za vseh 11 mesecev razen decembra, ki se samo testira.
-
-
-
-```{r Izris odločitvenih dreves}
-library(rpart.plot)
-
-#for(m in dt_list)
-  #rpart.plot(m)
-```
-
-
-
-```{r Napoved odločitvenih dreves}
-i = 1
-predicted <- list()
-for (dt in dt_list) {
-  tempDF <- filter(sortedDF, mesec == i+1)
-  predicted[[i]] <- predict(dt, tempDF, type = "class")
-  i = i + 1
-}
-```
-
-### Analiza odločitvenega drevesa
-```{r Pravilnost rezultatov odločitvenih dreves}
-# Tabela zmot
-cat("Pravilnost rezultatov \n")
-for(i in 1:11){
-  cat("Mesec =", i+1, " ->  ")
-  q <- filter(sortedDF, mesec == i+1)$norm_poraba == predicted[[i]]
-  cat(mean(q))
-  #tab <- table(predicted[[i]],filter(sortedDF, mesec == i+1)$norm_poraba)
-  cat(" +/-", sd(q)/sqrt(length(q)), "\n")
-}
-```
-
-
-```{r Senzitivnost odločitvenih dreves}
-for(i in 1:11){
-  cat("Mesec =", i+1, " ->  ")
-  tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predicted[[i]])
-  cat(tab["SREDNJA", "SREDNJA"]/sum(tab["SREDNJA",]), "\n")
-}
-```
-
-
-
-```{r Specifičnost odločitvenih dreves}
-for(i in 1:11){
-  cat("Mesec =", i+1, " ->  ")
-  tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predicted[[i]])
-  cat((sum(tab)-sum(tab["SREDNJA",])-sum(tab[,"SREDNJA"])+tab["SREDNJA","SREDNJA"])/(sum(tab)-sum(tab[,"SREDNJA"])), "\n")
-}
-```
-
-
-```{r Preciznost odločitvenih dreves}
-cat("Preciznost za 'SREDNJA'\n")
-for(i in 1:11){
-  cat("Mesec =", i+1, " ->  ")
-  tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predicted[[i]])
-  cat(tab["SREDNJA", "SREDNJA"]/sum(tab[,"SREDNJA"]), "\n")
-}
-```
-
-```{r Izračun matrike napovedi odločitvenih dreves}
-i = 1
-predictedMat <- list()
-for (dt in dt_list) {
-  tempDF <- filter(sortedDF, mesec == i+1)
-  predictedMat[[i]] <- predict(dt, tempDF, type = "prob")
-  i = i + 1
-}
-col.order <- c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA")
-head(predictedMat[[1]][,col.order])
-```
-
-
-
-```{r Barierjev test odločitvenih dreves}
-print("Barier's test", quote = F)
-for(i in 1:11){
-  cat("Mesec =", i+1, " ->  ")
-  bar <- sum((observedMat[[i]] - predictedMat[[i]]) ^ 2) / nrow(predictedMat[[i]])
-  cat(bar, "\n")
-}
-```
-
-
-
-```{r Izračun informacijske vsebine odločitvenih dreves}
+```{r}
 cat("Informacijska vsebina odgovora\n")
 for (i in 1:11) {
   cat("Mesec =", i+1, " ->  ")
@@ -326,7 +308,15 @@ for (i in 1:11) {
 }
 ```
 
-
+```{r}
+cat("Informacijska vsebina trivialnega modela\n")
+for (i in 1:11) {
+  cat("Mesec =", i+1, " ->  ")
+  p0Mat <- matrix(rep(p0, times=nrow(filter(sortedDF, mesec == i+1))), nrow = nrow(filter(sortedDF, mesec == i+1)), byrow = T)
+  cat(inf.score(filter(sortedDF, mesec <= i)$norm_poraba, filter(sortedDF, mesec == i+1)$norm_poraba, p0Mat), "\n")
+}
+```
+> Spet podoben problem, kot zgoraj pri trivialnem modelu. Vse vrednosti bi morale biti 0, ampak najbrž niso zaradi napačnega izračuna povprečne porazdelitve v p0 in potem generirani matriki p0Mat
 
 
 
@@ -348,10 +338,10 @@ head(p0Mat)
 
 
 #################################################################################
-#                                REGRESIJA                                      
+#                                REGRESIJA                                      #
 #################################################################################
 
-## LINEARNA REGRESIJA    
+LINEARNA REGRESIJA    
 ```{r}
 set.seed(0)
 sel <- sample(1:nrow(sortedDF), as.integer(nrow(sortedDF) * 0.7), F)
@@ -418,33 +408,12 @@ rmse <- function(obs, pred, mean.val)
 
 rmae(observed, predicted, mean(train$poraba))
 rmse(observed, predicted, mean(train$poraba))
-
 ```
 S pomočjo relativnih mer ocenimo naš linearni model v primerjavi s trivialnim. Zgornja vrnjena številka prikazuje
 relativno srednjo absolutno napako, spodnja pa relativno srednjo kvadratno napako. Ker so vrednosti manjše od 1, to 
 pomeni, da je linearni model bojši od trivialnega.
 
 
-PREČNO PREVERJANJE (LEAVE ONE OUT)
-
-```{r}
-predicted <- vector()
-
-for (i in 1:nrow(sortedDF))
-{	
-	model <- lm(poraba ~ ., sortedDF[-i,])
-	predicted[i] <- predict(model, sortedDF[i,])
-}
-
-plot(sortedDF$poraba)
-points(predicted, col="red")
-
-mae(sortedDF$poraba, predicted)
-mse(sortedDF$poraba, predicted)
-
-rmae(sortedDF$poraba, predicted, mean(sortedDF$poraba))
-rmse(sortedDF$poraba, predicted, mean(sortedDF$poraba))
-```
 ```{r}
 dataTrans <- sortedDF[,c("datum", "regija", "namembnost", "norm_poraba", "vikend", "ura", "stavba", "leto_izgradnje", "temp_zraka", "temp_rosisca", "oblacnost", "padavine", "pritisk", "smer_vetra", "teden", "mesec", "UNIX", "prev_temp", "temp_teden")]
 dataTrans$logpovrsina <- log1p(sortedDF$povrsina)
@@ -456,33 +425,20 @@ Atribute se transformira s funkcijo log1p(x), da se izognemo težavam, ki nastan
 atributa enaka 0. V izvirni obliki obdržimo kategorične in tiste zvezne atribute, ki imajo približno normalno
 porazdelitev, ostale transformiramo.
 
-```{r}
-logPredicted <- vector()
 
-for (i in 1:nrow(dataTrans))
-{	
-	model <- lm(logporaba ~ ., dataTrans[-i,])
-	logPredicted[i] <- predict(model, dataTrans[i,])
-}
-```
-
-Na novih podatkih se izvede prečno preverjanje po principu "leave one out".
+##################
+# nakljucni gozd #
+##################
 
 ```{r}
-predicted <- expm1(logPredicted)
+library(randomForest)
 
-plot(sortedDF$poraba)
-points(predicted, col="red")
-
-mae(sortedDF$poraba, predicted)
-mse(sortedDF$poraba, predicted)
-
-rmae(sortedDF$poraba, predicted, mean(sortedDF$poraba))
-rmse(sortedDF$poraba, predicted, mean(sortedDF$poraba))
+rf.model <- randomForest(quality ~ ., train)
+predicted <- predict(rf.model, test)
+mae(test$quality, predicted)
+rmae(test$quality, predicted, mean(train$quality))
 ```
 
-Dobljene napovedi transformiramo v originalni prostor z metodo expm1(x). Izpisane so napake na enak način
-kot pri prejšnjih odlomkih kode ("mae", "mse", "rmae", "rmse").
 
 
 
