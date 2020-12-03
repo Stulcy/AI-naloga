@@ -235,8 +235,8 @@ Zgoraj so narejena drevesa za vseh 11 mesecev razen decembra, ki se samo testira
 ```{r Izris odločitvenih dreves}
 library(rpart.plot)
 
-for(m in dt_list)
-  rpart.plot(m)
+#for(m in dt_list)
+  #rpart.plot(m)
 ```
 
 
