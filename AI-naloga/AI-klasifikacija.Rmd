@@ -362,7 +362,7 @@ for (i in 1:ncol(dataForRegressionJan))
 summary(dataForRegression)
 ```
 
-Podatke za regresijo se vzame iz že urejenih podatkov "sortedDF" brez "norm_poraba" in se jih faktorizira. Zaradi velike količine podatkov se preveri za vsak mesec posebej(npr. zgoraj za januar).
+Podatke za regresijo se vzame iz že urejenih podatkov "sortedDF" brez "norm_poraba" in se jih faktorizira. Zaradi prevelike količine podatkov se preveri za vsak mesec posebej(npr. zgoraj za januar).
 
 ```{r}
 library(CORElearn)
@@ -486,15 +486,599 @@ predicted <- predict(rf.model, test)
 mae(test$poraba, predicted)
 rmae(test$poraba, predicted, mean(train$poraba))
 ```
+Naključni gozd vrne zaenkrat najboljše rezultate in sicer s srednjo absolutno napako 27,7 in relativno srednjo
+absolutno napako 0,18.
 
 
 
 
 
+#################################
+# EVALVACIJA MODELOV PO MESECIH #
+#################################
+
+```{r}
+dataForRegression = subset(sortedDF, select = -c(norm_poraba, teden, UNIX, prev_temp, temp_teden, vikend, padavine, regija, ura, namembnost, oblacnost))
+summary(dataForRegression)
+```
+Ponovno se nastavi spremenljivka "dataForRegression". 
+
+```{r}
+dataForRegressionJan <- filter(dataForRegression, mesec == 1)
+dataForRegressionJan = subset(dataForRegressionJan, select = -c(mesec))
+```
+
+Izlušči se podatke samo za januar.
+
+```{r}
+dataForRegressionFeb <- filter(dataForRegression, mesec == 2)
+dataForRegressionFeb = subset(dataForRegressionFeb, select = -c(mesec))
+```
+Izlušči se podatke samo za februar.
+
+```{r}
+dataForRegressionMar <- filter(dataForRegression, mesec == 3)
+dataForRegressionMar = subset(dataForRegressionMar, select = -c(mesec))
+```
+Izlušči se podatke samo za marec.
+
+```{r}
+dataForRegressionApr <- filter(dataForRegression, mesec == 4)
+dataForRegressionApr = subset(dataForRegressionApr, select = -c(mesec))
+```
+Izlušči se podatke samo za april.
+
+```{r}
+dataForRegressionMay <- filter(dataForRegression, mesec == 5)
+dataForRegressionMay = subset(dataForRegressionMay, select = -c(mesec))
+```
+Izlušči se podatke samo za maj.
+
+```{r}
+dataForRegressionJun <- filter(dataForRegression, mesec == 6)
+dataForRegressionJun = subset(dataForRegressionJun, select = -c(mesec))
+```
+Izlušči se podatke samo za junij.
+
+```{r}
+dataForRegressionJul <- filter(dataForRegression, mesec == 7)
+dataForRegressionJul = subset(dataForRegressionJul, select = -c(mesec))
+```
+Izlušči se podatke samo za julij.
+
+```{r}
+dataForRegressionAug <- filter(dataForRegression, mesec == 8)
+dataForRegressionAug = subset(dataForRegressionAug, select = -c(mesec))
+```
+Izlušči se podatke samo za august.
+
+```{r}
+dataForRegressionSep <- filter(dataForRegression, mesec == 9)
+dataForRegressionSep = subset(dataForRegressionSep, select = -c(mesec))
+```
+Izlušči se podatke samo za september.
+
+```{r}
+dataForRegressionOct <- filter(dataForRegression, mesec == 10)
+dataForRegressionOct = subset(dataForRegressionOct, select = -c(mesec))
+```
+Izlušči se podatke samo za oktober.
+
+```{r}
+dataForRegressionNov <- filter(dataForRegression, mesec == 11)
+dataForRegressionNov = subset(dataForRegressionNov, select = -c(mesec))
+```
+Izlušči se podatke samo za november.
+
+```{r}
+dataForRegressionDec <- filter(dataForRegression, mesec == 12)
+dataForRegressionDec = subset(dataForRegressionDec, select = -c(mesec))
+```
+Izlušči se podatke samo za december.
+
+
+
+###########
+# FEBRUAR #
+###########
+
+```{r}
+dataForTrain <- dataForRegressionJan
+dataForTest <- dataForRegressionFeb
+
+train <- dataForTrain
+test <- dataForTest
+```
+Nastavi se učne in testne podatke. V tem primeru bomo testirali januarske na februarskih.
+
+# LINEARNA REGRESIJA #
+```{r}
+model <- lm(poraba ~ ., train)
+predicted <- predict(model, test)
+observed <- test$poraba
+plot(observed)
+points(predicted, col="red")
+
+mae(observed, predicted)
+mse(observed, predicted)
+sqrt(mse(observed, predicted))
+```
+
+# regresijsko drevo #
+```{r}
+rt.model <- rpart(poraba ~ ., data=train)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+# nakljucni gozd #
+```{r}
+rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+
+
+#########
+# MAREC #
+#########
+
+
+```{r}
+dataForTrain <- rbind(dataForRegressionJan, dataForRegressionFeb)
+dataForTest <- dataForRegressionMar
+
+train <- dataForTrain
+test <- dataForTest
+```
+Nastavi se učne in testne podatke. V tem primeru bomo testirali vse predhodnje podatke + februar na marčevskih.
+
+# LINEARNA REGRESIJA #
+```{r}
+model <- lm(poraba ~ ., train)
+predicted <- predict(model, test)
+observed <- test$poraba
+plot(observed)
+points(predicted, col="red")
+
+mae(observed, predicted)
+mse(observed, predicted)
+sqrt(mse(observed, predicted))
+```
+
+# regresijsko drevo #
+```{r}
+rt.model <- rpart(poraba ~ ., data=train)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+# nakljucni gozd #
+```{r}
+rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+
+
+#########
+# APRIL #
+#########
+
+
+```{r}
+dataForTrain <- rbind(dataForTrain, dataForRegressionMar)
+dataForTest <- dataForRegressionApr
+
+train <- dataForTrain
+test <- dataForTest
+```
+Nastavi se učne in testne podatke. V tem primeru bomo testirali vse predhodnje podatke + marec na aprilskih.
+
+# LINEARNA REGRESIJA #
+```{r}
+model <- lm(poraba ~ ., train)
+predicted <- predict(model, test)
+observed <- test$poraba
+plot(observed)
+points(predicted, col="red")
+
+mae(observed, predicted)
+mse(observed, predicted)
+sqrt(mse(observed, predicted))
+```
+
+# regresijsko drevo #
+```{r}
+rt.model <- rpart(poraba ~ ., data=train)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+# nakljucni gozd #
+```{r}
+rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+
+
+#######
+# MAJ #
+#######
+
+
+```{r}
+dataForTrain <- rbind(dataForTrain, dataForRegressionApr)
+dataForTest <- dataForRegressionMay
+
+train <- dataForTrain
+test <- dataForTest
+```
+Nastavi se učne in testne podatke. V tem primeru bomo testirali vse predhodnje podatke + april na majevih.
+
+# LINEARNA REGRESIJA #
+```{r}
+model <- lm(poraba ~ ., train)
+predicted <- predict(model, test)
+observed <- test$poraba
+plot(observed)
+points(predicted, col="red")
+
+mae(observed, predicted)
+mse(observed, predicted)
+sqrt(mse(observed, predicted))
+```
+
+# regresijsko drevo #
+```{r}
+rt.model <- rpart(poraba ~ ., data=train)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+# nakljucni gozd #
+```{r}
+rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
 
 
 
 
+#########
+# JUNIJ #
+#########
 
 
+```{r}
+dataForTrain <- rbind(dataForTrain, dataForRegressionMay)
+dataForTest <- dataForRegressionJun
+
+train <- dataForTrain
+test <- dataForTest
+```
+Nastavi se učne in testne podatke. V tem primeru bomo testirali vse predhodnje podatke + maj na junijskih.
+
+# LINEARNA REGRESIJA #
+```{r}
+model <- lm(poraba ~ ., train)
+predicted <- predict(model, test)
+observed <- test$poraba
+plot(observed)
+points(predicted, col="red")
+
+mae(observed, predicted)
+mse(observed, predicted)
+sqrt(mse(observed, predicted))
+```
+
+# regresijsko drevo #
+```{r}
+rt.model <- rpart(poraba ~ ., data=train)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+# nakljucni gozd #
+```{r}
+rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+
+
+#########
+# JULIJ #
+#########
+
+
+```{r}
+dataForTrain <- rbind(dataForTrain, dataForRegressionJun)
+dataForTest <- dataForRegressionJul
+
+train <- dataForTrain
+test <- dataForTest
+```
+Nastavi se učne in testne podatke. V tem primeru bomo testirali vse predhodnje podatke + junij na julijskih.
+
+# LINEARNA REGRESIJA #
+```{r}
+model <- lm(poraba ~ ., train)
+predicted <- predict(model, test)
+observed <- test$poraba
+plot(observed)
+points(predicted, col="red")
+
+mae(observed, predicted)
+mse(observed, predicted)
+sqrt(mse(observed, predicted))
+```
+
+# regresijsko drevo #
+```{r}
+rt.model <- rpart(poraba ~ ., data=train)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+# nakljucni gozd #
+```{r}
+rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+
+
+##########
+# AUGUST #
+##########
+
+
+```{r}
+dataForTrain <- rbind(dataForTrain, dataForRegressionJul)
+dataForTest <- dataForRegressionAug
+
+train <- dataForTrain
+test <- dataForTest
+```
+Nastavi se učne in testne podatke. V tem primeru bomo testirali vse predhodnje podatke + julij na augustovih.
+
+# LINEARNA REGRESIJA #
+```{r}
+model <- lm(poraba ~ ., train)
+predicted <- predict(model, test)
+observed <- test$poraba
+plot(observed)
+points(predicted, col="red")
+
+mae(observed, predicted)
+mse(observed, predicted)
+sqrt(mse(observed, predicted))
+```
+
+# regresijsko drevo #
+```{r}
+rt.model <- rpart(poraba ~ ., data=train)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+# nakljucni gozd #
+```{r}
+rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+
+
+#############
+# SEPTEMBER #
+#############
+
+
+```{r}
+dataForTrain <- rbind(dataForTrain, dataForRegressionAug)
+dataForTest <- dataForRegressionSep
+
+train <- dataForTrain
+test <- dataForTest
+```
+Nastavi se učne in testne podatke. V tem primeru bomo testirali vse predhodnje podatke + august na septembrskih.
+
+# LINEARNA REGRESIJA #
+```{r}
+model <- lm(poraba ~ ., train)
+predicted <- predict(model, test)
+observed <- test$poraba
+plot(observed)
+points(predicted, col="red")
+
+mae(observed, predicted)
+mse(observed, predicted)
+sqrt(mse(observed, predicted))
+```
+
+# regresijsko drevo #
+```{r}
+rt.model <- rpart(poraba ~ ., data=train)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+# nakljucni gozd #
+```{r}
+rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+
+
+###########
+# OKTOBER #
+###########
+
+
+```{r}
+dataForTrain <- rbind(dataForTrain, dataForRegressionSep)
+dataForTest <- dataForRegressionOct
+
+train <- dataForTrain
+test <- dataForTest
+```
+Nastavi se učne in testne podatke. V tem primeru bomo testirali vse predhodnje podatke + september na oktobrskih.
+
+# LINEARNA REGRESIJA #
+```{r}
+model <- lm(poraba ~ ., train)
+predicted <- predict(model, test)
+observed <- test$poraba
+plot(observed)
+points(predicted, col="red")
+
+mae(observed, predicted)
+mse(observed, predicted)
+sqrt(mse(observed, predicted))
+```
+
+# regresijsko drevo #
+```{r}
+rt.model <- rpart(poraba ~ ., data=train)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+# nakljucni gozd #
+```{r}
+rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+
+
+############
+# NOVEMBER #
+############
+
+
+```{r}
+dataForTrain <- rbind(dataForTrain, dataForRegressionOct)
+dataForTest <- dataForRegressionNov
+
+train <- dataForTrain
+test <- dataForTest
+```
+Nastavi se učne in testne podatke. V tem primeru bomo testirali vse predhodnje podatke + oktober na novemberskih.
+
+# LINEARNA REGRESIJA #
+```{r}
+model <- lm(poraba ~ ., train)
+predicted <- predict(model, test)
+observed <- test$poraba
+plot(observed)
+points(predicted, col="red")
+
+mae(observed, predicted)
+mse(observed, predicted)
+sqrt(mse(observed, predicted))
+```
+
+# regresijsko drevo #
+```{r}
+rt.model <- rpart(poraba ~ ., data=train)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+# nakljucni gozd #
+```{r}
+rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+
+
+############
+# DECEMBER #
+############
+
+
+```{r}
+dataForTrain <- rbind(dataForTrain, dataForRegressionNov)
+dataForTest <- dataForRegressionDec
+
+train <- dataForTrain
+test <- dataForTest
+```
+Nastavi se učne in testne podatke. V tem primeru bomo testirali vse predhodnje podatke + novemberske na decembrskih.
+
+# LINEARNA REGRESIJA #
+```{r}
+model <- lm(poraba ~ ., train)
+predicted <- predict(model, test)
+observed <- test$poraba
+plot(observed)
+points(predicted, col="red")
+
+mae(observed, predicted)
+mse(observed, predicted)
+sqrt(mse(observed, predicted))
+```
+
+# regresijsko drevo #
+```{r}
+rt.model <- rpart(poraba ~ ., data=train)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+# nakljucni gozd #
+```{r}
+rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
 
