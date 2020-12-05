@@ -55,7 +55,7 @@ data$vikend <- x
 
 Zgornja koda prikazuje kako dodamo atribut "vikend", ki ima vrednost TRUE, če je dan sobota ali nedelja, oziroma FALSE, če je delovni dan. Pomagamo si s knjižnico "chron".
 
-```{r}
+```{r Ustvarjen atribut UNIX}
 data$UNIX <- as.numeric(as.POSIXct(paste(data$datum, data$ura, sep=" ")))
 ```
 
