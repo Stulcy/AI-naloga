@@ -20,6 +20,7 @@ data$norm_poraba <- as.factor(data$norm_poraba)
 
 head(data)
 ```
+
 Atribute "regija", "namembnost" in "norm_poraba" faktoriziramo, da programski jezik razbere zalogo vrednosti. V tabeli zgoraj je prikazanih prvih nekaj vrstic. 
 
 ```{r}
@@ -27,6 +28,7 @@ data$datum <- as.Date(data$datum)
 head(data)
 
 ```
+
 Lastnost atributa "datum" nastavimo na <date>.
 
 ```{r}
@@ -41,6 +43,7 @@ data$mesec <- newNewData
 
 head(data)
 ```
+
 V tem delu dodamo nova atributa "teden" in "mesec" za lažje nadaljno delo. Za pomoč uporabimo knjižnico "lubridate".
 
 ```{r}
@@ -48,30 +51,23 @@ library(chron)
 
 x <- is.weekend(data$datum)
 data$vikend <- x
-
-#summary(data)
 ```
-Zgornja koda prikazuje kako dodamo atribut "vikend", ki ima vrednost TRUE, če je dan sobota ali nedelja, oziroma FALSE, če je delovni dan. Pomagamo si s knjižnico "chron".
 
+Zgornja koda prikazuje kako dodamo atribut "vikend", ki ima vrednost TRUE, če je dan sobota ali nedelja, oziroma FALSE, če je delovni dan. Pomagamo si s knjižnico "chron".
 
 ```{r}
 data$UNIX <- as.numeric(as.POSIXct(paste(data$datum, data$ura, sep=" ")))
-#data
 ```
+
 Ustvarimo splošen atribut za čas, ki nam omogoča lažje sortiranje.
 
-
-
-
 ```{r}
-#rm(a)
 a <- order(data$stavba, data$ura, data$UNIX)
 sortedDF <- data[a,]
-#data
 sortedDF
 ```
-Dataframe sortiramo po številki stavbe, uri meritve in UNIX času.
 
+Dataframe sortiramo po številki stavbe, uri meritve in UNIX času.
 
 ```{r}
 vect = vector()
@@ -97,9 +93,8 @@ sortedDF$norm_poraba <- factor(sortedDF$norm_poraba, levels=c("ZELONIZKA", "NIZK
 sortedDF$prev_temp <- vect
 head(sortedDF)
 ```
+
 S kodo zgornjih dveh odlomkov vsaki meritvi v sortirani matriki poiščemo meritev temperature prejšnjega dne in ji le to dopišemo v poseben stolpec z atributi.
-
-
 
 ```{r}
 vect = vector()
@@ -135,8 +130,8 @@ for (row in 1:nrow(sortedDF))
 sortedDF$temp_teden <- vect
 head(sortedDF)
 ```
-Z zanko se sprehodimo po vsaki meritvi v matriki in izračunamo povprečje največ zadnjih 7 meritev za isto stavbo ob isti uri. Povprečno temperaturo zapišemo v stolpec z imenom "temp_teden".
 
+Z zanko se sprehodimo po vsaki meritvi v matriki in izračunamo povprečje največ zadnjih 7 meritev za isto stavbo ob isti uri. Povprečno temperaturo zapišemo v stolpec z imenom "temp_teden".
 
 
 ## Večinski razred
@@ -347,60 +342,14 @@ for (i in 1:11) {
 
 
 
-
+#################################################################################
 #################################################################################
 #                                REGRESIJA                                      #
 #################################################################################
-
-```{r}
-dataForRegression = subset(sortedDF, select = -c(norm_poraba, teden, UNIX, prev_temp, temp_teden))
-
-dataForRegressionJan <- filter(dataForRegression, mesec == 1)
-for (i in 1:ncol(dataForRegressionJan))
-  dataForRegressionJan[,i] <- as.factor(dataForRegressionJan[,i])
-
-summary(dataForRegression)
-```
-
-Podatke za regresijo se vzame iz že urejenih podatkov "sortedDF" brez "norm_poraba" in se jih faktorizira. Zaradi prevelike količine podatkov se preveri za vsak mesec posebej(npr. zgoraj za januar).
-
-```{r}
-library(CORElearn)
-
-dataForRegressionJan = subset(dataForRegressionJan, select = -c(mesec))
-sort(attrEval(poraba ~ ., dataForRegressionJan, "InfGain"),  decreasing = TRUE)
-```
-Preveri se kateri atributi največ pripomorejo pri napovedovanju ciljne spremenljivke. Izbere se najboljše, torej
-tiste, ki imajo najvišjo oceno.
+#################################################################################
 
 
-
-######################
-# LINEARNA REGRESIJA #   
-######################
-
-```{r}
-dataForRegression = subset(dataForRegression, select = -c(mesec, vikend, padavine, regija, ura, namembnost, oblacnost))
-summary(dataForRegression)
-```
-Množica podatkov se zmanjša na 9 atributov, ki najbolj pripomorejo k napovedovanju atributa "poraba".
-
-```{r}
-set.seed(0)
-sel <- sample(1:nrow(dataForRegression), as.integer(nrow(dataForRegression) * 0.7), F)
-train <- dataForRegression[sel,]
-test <- dataForRegression[-sel,]
-
-model <- lm(poraba ~ ., train)
-predicted <- predict(model, test)
-observed <- test$poraba
-plot(observed)
-points(predicted, col="red")
-
-```
-Nastavimo seed na 0, da je ob vsakem zagonu enaka naključnost.Vsi podakti se razdelijo na testno in 
-učno množico v razmerju 3:7. Model se naredi glede na opazovano spremenljivko "poraba".Graf za te
-podatke je prikazan zgoraj.V tem primeru je linearna regresija narejena za vse mesece.
+# DEKLARACIJA FUNKCIJ ZA OCENJEVANJE #
 
 ```{r}
 mae <- function(obs, pred)
@@ -414,12 +363,66 @@ mse <- function(obs, pred)
 	mean((obs - pred)^2)
 }
 
+rmae <- function(obs, pred, mean.val) 
+{  
+	sum(abs(obs - pred)) / sum(abs(obs - mean.val))
+}
+
+rmse <- function(obs, pred, mean.val) 
+{  
+	sum((obs - pred)^2)/sum((obs - mean.val)^2)
+}
+```
+
+Najprej se deklarira funkcije, ki se bojo uporabljale za ocenjevanje modelov.
+
+MAE -> srednja absolutna napaka
+
+MSE -> srednja kvadratna napaka
+
+RMAE -> relativna srednja absolutna napak
+
+RMSE -> relativna srednja kvadratna napaka
+
+
+
+##############################################
+# MODELI NAUČENI NA CELOTNI MNOŽICI PODATKOV #
+##############################################
+
+```{r}
+dataForRegression <- sortedDF
+set.seed(0)
+sel <- sample(1:nrow(dataForRegression), as.integer(nrow(dataForRegression) * 0.7), F)
+train <- dataForRegression[sel,]
+test <- dataForRegression[-sel,]
+```
+
+Podatki za regresijo se preberejo iz v naprej pripravljenega dataframe-a "sortedDF". Nastavi se učne in testne podatke, ki se jih razdeli v razmerju 3:7.
+
+
+# LINEARNA REGRESIJA #
+
+```{r}
+model <- lm(poraba ~ ., train)
+predicted <- predict(model, test)
+observed <- test$poraba
+plot(observed)
+points(predicted, col="red")
+
 mae(observed, predicted)
 mse(observed, predicted)
 sqrt(mse(observed, predicted))
 ```
-Oznaka "mae" predstavlja srednjo absolutno napako, "mse" pa srednjo kvadratno napako. Če za kvadratno napako
-želimo to napako v enakih enotah kot je naša spremenljivka "poraba" moramo "mse" še postaviti pod koren. V izpisu zgoraj zgornja številka predstavlja absolutno napako, spodnji dve pa kvadratno (prva normalno, druga korenjeno).
+
+Linearna regresija nam za vse podatke vrne:
+
+SREDNJA ABSOLUTNA NAPAKA = 82.04917
+
+SREDNJA KVADRATNA NAPAKA (korenjena, da je v enotah atributa "poraba") = 137.2372
+
+
+# DODATNI TEST S TRIVIALNIM MODELOM (GLEDE NA LINEARNEGA) #
 
 ```{r}
 meanVal <- mean(train$poraba)
@@ -439,29 +442,16 @@ boljši od trivialnega modela.
 
 
 ```{r}
-rmae <- function(obs, pred, mean.val) 
-{  
-	sum(abs(obs - pred)) / sum(abs(obs - mean.val))
-}
-
-rmse <- function(obs, pred, mean.val) 
-{  
-	sum((obs - pred)^2)/sum((obs - mean.val)^2)
-}
-
-
 rmae(observed, predicted, mean(train$poraba))
 rmse(observed, predicted, mean(train$poraba))
 ```
+
 S pomočjo relativnih mer ocenimo naš linearni model v primerjavi s trivialnim. Zgornja vrnjena številka prikazuje
 relativno srednjo absolutno napako, spodnja pa relativno srednjo kvadratno napako. Ker so vrednosti manjše od 1, to 
 pomeni, da je linearni model bojši od trivialnega.
 
 
-
-#####################
 # regresijsko drevo #
-#####################
 
 ```{r}
 rt.model <- rpart(poraba ~ ., data=train)
@@ -470,13 +460,16 @@ predicted <- predict(rt.model, test)
 mae(test$poraba, predicted)
 rmae(test$poraba, predicted, mean(train$poraba))
 ```
-Z vsemi podatki, torej 30% testna množica, 70% učna se dobi zgornje rešitve. Prikazano je regresijsko drevo,
-prva vrnjena številka je srednja absolutna napaka, druga pa relativna srednja absolutna napaka.
+
+Regresijsko drevo nam za vse podatke vrne:
+
+SREDNJA ABSOLUTNA NAPAKA = 53.48211
+
+RELATIVNA SREDNJA ABSOLUTNA NAPAKA = 0.3533899 
+(Bližje kot je številka, ki jo vrne RMAE, 0, boljši je model.)
 
 
-##################
 # nakljucni gozd #
-##################
 
 ```{r}
 library(randomForest)
@@ -485,17 +478,114 @@ rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
 predicted <- predict(rf.model, test)
 mae(test$poraba, predicted)
 rmae(test$poraba, predicted, mean(train$poraba))
+
 ```
-Naključni gozd vrne zaenkrat najboljše rezultate in sicer s srednjo absolutno napako 27,7 in relativno srednjo
-absolutno napako 0,18.
+
+Naključni gozd nam za vse podatke vrne:
+
+SREDNJA ABSOLUTNA NAPAKA = 27.48959
+
+RELATIVNA SREDNJA ABSOLUTNA NAPAKA = 0.181641
 
 
 
 
+# IZBIRANJE ATRIBUTOV Z NAJVEČJIM VPLIVOM NA CILJNO/ODVISNO SPREMENLJIVKO #
 
-#################################
-# EVALVACIJA MODELOV PO MESECIH #
-#################################
+```{r}
+dataForRegression = subset(sortedDF, select = -c(norm_poraba, teden, UNIX, prev_temp, temp_teden))
+
+dataForRegressionJan <- filter(dataForRegression, mesec == 1)
+for (i in 1:ncol(dataForRegressionJan))
+  dataForRegressionJan[,i] <- as.factor(dataForRegressionJan[,i])
+```
+
+Podatke za regresijo se vzame iz že urejenih podatkov "sortedDF" brez "norm_poraba" in se jih faktorizira. 
+
+```{r}
+library(CORElearn)
+
+dataForRegressionJan = subset(dataForRegressionJan, select = -c(mesec))
+sort(attrEval(poraba ~ ., dataForRegressionJan, "InfGain"),  decreasing = TRUE)
+```
+Preveri se kateri atributi največ pripomorejo pri napovedovanju ciljne spremenljivke. Izbere se najboljše, torej
+tiste, ki imajo najvišjo oceno. Zaradi prevelike količine podatkov se preveri za vsak mesec posebej(npr. zgoraj za januar).
+
+```{r}
+dataForRegression = subset(dataForRegression, select = -c(mesec, vikend, padavine, regija, ura, namembnost, oblacnost))
+summary(dataForRegression)
+```
+
+Množica podatkov se zmanjša na 9 atributov (poleg atributa "poraba"), ki najbolj pripomorejo k napovedovanju atributa "poraba".
+
+
+# LINEARNA REGRESIJA #   
+
+```{r}
+set.seed(0)
+sel <- sample(1:nrow(dataForRegression), as.integer(nrow(dataForRegression) * 0.7), F)
+train <- dataForRegression[sel,]
+test <- dataForRegression[-sel,]
+
+model <- lm(poraba ~ ., train)
+predicted <- predict(model, test)
+observed <- test$poraba
+plot(observed)
+points(predicted, col="red")
+
+mae(observed, predicted)
+mse(observed, predicted)
+sqrt(mse(observed, predicted))
+```
+
+Nastavimo seed na 0, da je ob vsakem zagonu enaka naključnost.Vsi podakti se razdelijo na testno in 
+učno množico v razmerju 3:7. Model se naredi glede na opazovano spremenljivko "poraba".Graf za te
+podatke je prikazan zgoraj.V tem primeru je linearna regresija narejena za vse mesece.
+
+SREDNJA ABSOLUTNA NAPAKA = 99.04282
+
+SREDNJA KVADRATNA NAPAKA (korenjena, da je v enotah atributa "poraba") = 180.3948
+
+
+# regresijsko drevo #
+
+```{r}
+rt.model <- rpart(poraba ~ ., data=train)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+Regresijsko drevo nam za vse podatke vrne:
+
+SREDNJA ABSOLUTNA NAPAKA = 63.07831
+
+RELATIVNA SREDNJA ABSOLUTNA NAPAKA = 0.416798 
+(Bližje kot je številka, ki jo vrne RMAE, 0, boljši je model.)
+
+
+# nakljucni gozd #
+
+```{r}
+rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, test)
+mae(test$poraba, predicted)
+rmae(test$poraba, predicted, mean(train$poraba))
+```
+
+Naključni gozd nam za vse podatke vrne:
+
+SREDNJA ABSOLUTNA NAPAKA = 
+
+RELATIVNA SREDNJA ABSOLUTNA NAPAKA = 
+
+
+
+
+#############################################
+# EVALVACIJA MODELOV PO MESECIH (REGRESIJA) #
+#############################################
 
 ```{r}
 dataForRegression = subset(sortedDF, select = -c(norm_poraba, teden, UNIX, prev_temp, temp_teden, vikend, padavine, regija, ura, namembnost, oblacnost))
@@ -514,67 +604,79 @@ Izlušči se podatke samo za januar.
 dataForRegressionFeb <- filter(dataForRegression, mesec == 2)
 dataForRegressionFeb = subset(dataForRegressionFeb, select = -c(mesec))
 ```
+
 Izlušči se podatke samo za februar.
 
 ```{r}
 dataForRegressionMar <- filter(dataForRegression, mesec == 3)
 dataForRegressionMar = subset(dataForRegressionMar, select = -c(mesec))
 ```
+
 Izlušči se podatke samo za marec.
 
 ```{r}
 dataForRegressionApr <- filter(dataForRegression, mesec == 4)
 dataForRegressionApr = subset(dataForRegressionApr, select = -c(mesec))
 ```
+
 Izlušči se podatke samo za april.
 
 ```{r}
 dataForRegressionMay <- filter(dataForRegression, mesec == 5)
 dataForRegressionMay = subset(dataForRegressionMay, select = -c(mesec))
 ```
+
 Izlušči se podatke samo za maj.
 
 ```{r}
 dataForRegressionJun <- filter(dataForRegression, mesec == 6)
 dataForRegressionJun = subset(dataForRegressionJun, select = -c(mesec))
 ```
+
 Izlušči se podatke samo za junij.
 
 ```{r}
 dataForRegressionJul <- filter(dataForRegression, mesec == 7)
 dataForRegressionJul = subset(dataForRegressionJul, select = -c(mesec))
 ```
+
 Izlušči se podatke samo za julij.
 
 ```{r}
 dataForRegressionAug <- filter(dataForRegression, mesec == 8)
 dataForRegressionAug = subset(dataForRegressionAug, select = -c(mesec))
 ```
+
 Izlušči se podatke samo za august.
 
 ```{r}
 dataForRegressionSep <- filter(dataForRegression, mesec == 9)
 dataForRegressionSep = subset(dataForRegressionSep, select = -c(mesec))
 ```
+
 Izlušči se podatke samo za september.
 
 ```{r}
 dataForRegressionOct <- filter(dataForRegression, mesec == 10)
 dataForRegressionOct = subset(dataForRegressionOct, select = -c(mesec))
 ```
+
 Izlušči se podatke samo za oktober.
 
 ```{r}
 dataForRegressionNov <- filter(dataForRegression, mesec == 11)
 dataForRegressionNov = subset(dataForRegressionNov, select = -c(mesec))
 ```
+
 Izlušči se podatke samo za november.
 
 ```{r}
 dataForRegressionDec <- filter(dataForRegression, mesec == 12)
 dataForRegressionDec = subset(dataForRegressionDec, select = -c(mesec))
 ```
+
 Izlušči se podatke samo za december.
+
 
 
 
@@ -589,6 +691,7 @@ dataForTest <- dataForRegressionFeb
 train <- dataForTrain
 test <- dataForTest
 ```
+
 Nastavi se učne in testne podatke. V tem primeru bomo testirali januarske na februarskih.
 
 # LINEARNA REGRESIJA #
