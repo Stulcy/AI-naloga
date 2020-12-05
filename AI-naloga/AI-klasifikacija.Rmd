@@ -336,8 +336,6 @@ for (i in 1:11) {
 
 
 
-
-
 ## Testni chunk
 
 ```{r}
