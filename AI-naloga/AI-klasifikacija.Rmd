@@ -224,6 +224,7 @@ for(m in 1:11) {
   dt_list[[m]] <- prune(dt_list[[m]], cp = th)
 }
 
+cat("\014")
 rm(tab)
 rm(row)
 rm(th)
@@ -285,7 +286,7 @@ for(i in 1:11){
 
 
 ```{r Preciznost odločitvenih dreves}
-cat("Preciznost za 'SREDNJA'\n")
+#cat("Preciznost za 'SREDNJA'\n")
 for(i in 1:11){
   cat("Mesec =", i+1, " ->  ")
   tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predicted[[i]])
@@ -327,11 +328,216 @@ for (i in 1:11) {
 ```
 
 
+## Naivni Bayesov klasifikator
+
+```{r Izračun modelov Naivni Bayes}
+library(e1071)
+
+nb_list <- list()
+
+for(m in 1:11) {
+  tempDF <- filter(sortedDF, mesec <= m)
+  
+  drops <- c("poraba")
+  tempDF <- tempDF[ , !(names(tempDF) %in% drops)]
+  nb_list[[m]] <- naiveBayes(norm_poraba ~ ., data = tempDF)
+}
+
+```
+
+
+```{r Napoved po naivnem Bayesu}
+i = 1
+predictedBayes <- list()
+for (nb in nb_list) {
+  tempDF <- filter(sortedDF, mesec == i+1)
+  predictedBayes[[i]] <- predict(nb, tempDF, type = "class")
+  i = i + 1
+}
+```
+
+
+### Analiza Naivnega Bayesovega klasifikatorja
+
+```{r Pravilnost rezultatov Naivnega Bayesa}
+# Tabela zmot
+cat("Pravilnost rezultatov \n")
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  q <- filter(sortedDF, mesec == i+1)$norm_poraba == predictedBayes[[i]]
+  cat(mean(q))
+  #tab <- table(predicted[[i]],filter(sortedDF, mesec == i+1)$norm_poraba)
+  cat(" +/-", sd(q)/sqrt(length(q)), "\n")
+}
+```
+
+```{r Senzitivnost Naivnega Bayesa}
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predictedBayes[[i]])
+  cat(tab["SREDNJA", "SREDNJA"]/sum(tab["SREDNJA",]), "\n")
+}
+```
 
 
 
+```{r Specifičnost Naivnega Bayesa}
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predictedBayes[[i]])
+  cat((sum(tab)-sum(tab["SREDNJA",])-sum(tab[,"SREDNJA"])+tab["SREDNJA","SREDNJA"])/(sum(tab)-sum(tab[,"SREDNJA"])), "\n")
+}
+```
 
 
+```{r Preciznost Naivnega Bayesa}
+#cat("Preciznost za 'SREDNJA'\n")
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predictedBayes[[i]])
+  cat(tab["SREDNJA", "SREDNJA"]/sum(tab[,"SREDNJA"]), "\n")
+}
+```
+
+```{r Izračun matrike napovedi Naivnega Bayesa}
+i = 1
+predictedMat <- list()
+for (nb in nb_list) {
+  tempDF <- filter(sortedDF, mesec == i+1)
+  predictedMat[[i]] <- predict(nb, tempDF, type = "raw")
+  i = i + 1
+}
+col.order <- c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA")
+head(predictedMat[[1]][,col.order])
+```
+
+
+
+```{r Barierjev test Naivnega Bayesa}
+print("Barier's test", quote = F)
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  bar <- sum((observedMat[[i]] - predictedMat[[i]]) ^ 2) / nrow(predictedMat[[i]])
+  cat(bar, "\n")
+}
+```
+
+
+
+```{r Izračun informacijske vsebine Naivnega Bayesa}
+cat("Informacijska vsebina odgovora\n")
+for (i in 1:11) {
+  cat("Mesec =", i+1, " ->  ")
+  cat(inf.score(filter(sortedDF, mesec <= i)$norm_poraba, filter(sortedDF, mesec == i+1)$norm_poraba, predictedMat[[i]]), "\n")
+}
+```
+
+
+
+## K-najbližjih sosedov
+
+```{r Izračun modela K-najbližjih sosedov}
+library(CORElearn)
+
+knn_list <- list()
+
+for(m in 1:11) {
+  tempDF <- filter(sortedDF, mesec <= m)
+  
+  drops <- c("poraba")
+  tempDF <- tempDF[ , !(names(tempDF) %in% drops)]
+  knn_list[[m]] <- CoreModel(norm_poraba ~ ., data = tempDF, model = "knn", kInNN = 5)
+}
+
+cat("\014")
+```
+
+
+```{r Napoved po modelu K-najbližjih sosedov}
+i = 1
+predictedKNN <- list()
+for (knn in knn_list) {
+  tempDF <- filter(sortedDF, mesec == i+1)
+  predictedKNN[[i]] <- predict(knn, tempDF, type = "class")
+  i = i + 1
+}
+```
+
+
+### Analiza modela K-najbližjih sosedov
+
+```{r Pravilnost rezultatov modela K-najbližjih sosedov}
+# Tabela zmot
+cat("Pravilnost rezultatov \n")
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  q <- filter(sortedDF, mesec == i+1)$norm_poraba == predictedBayes[[i]]
+  cat(mean(q))
+  #tab <- table(predicted[[i]],filter(sortedDF, mesec == i+1)$norm_poraba)
+  cat(" +/-", sd(q)/sqrt(length(q)), "\n")
+}
+```
+
+```{r Senzitivnost modela K-najbližjih sosedov}
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predictedBayes[[i]])
+  cat(tab["SREDNJA", "SREDNJA"]/sum(tab["SREDNJA",]), "\n")
+}
+```
+
+
+
+```{r Specifičnost modela K-najbližjih sosedov}
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predictedBayes[[i]])
+  cat((sum(tab)-sum(tab["SREDNJA",])-sum(tab[,"SREDNJA"])+tab["SREDNJA","SREDNJA"])/(sum(tab)-sum(tab[,"SREDNJA"])), "\n")
+}
+```
+
+
+```{r Preciznost modela K-najbližjih sosedov}
+#cat("Preciznost za 'SREDNJA'\n")
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predictedBayes[[i]])
+  cat(tab["SREDNJA", "SREDNJA"]/sum(tab[,"SREDNJA"]), "\n")
+}
+```
+
+```{r Izračun matrike napovedi modela K-najbližjih sosedov}
+i = 1
+predictedMat <- list()
+for (nb in nb_list) {
+  tempDF <- filter(sortedDF, mesec == i+1)
+  predictedMat[[i]] <- predict(nb, tempDF, type = "raw")
+  i = i + 1
+}
+col.order <- c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA")
+head(predictedMat[[1]][,col.order])
+```
+
+
+
+```{r Barierjev test modela K-najbližjih sosedov}
+print("Barier's test", quote = F)
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  bar <- sum((observedMat[[i]] - predictedMat[[i]]) ^ 2) / nrow(predictedMat[[i]])
+  cat(bar, "\n")
+}
+```
+
+
+
+```{r Izračun informacijske vsebine modela K-najbližjih sosedov}
+cat("Informacijska vsebina odgovora\n")
+for (i in 1:11) {
+  cat("Mesec =", i+1, " ->  ")
+  cat(inf.score(filter(sortedDF, mesec <= i)$norm_poraba, filter(sortedDF, mesec == i+1)$norm_poraba, predictedMat[[i]]), "\n")
+}
+```
 
 
 
