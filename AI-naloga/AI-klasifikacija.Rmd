@@ -342,16 +342,14 @@ for (i in 1:11) {
 
 
 
-#################################################################################
-#################################################################################
-#                                REGRESIJA                                      #
-#################################################################################
-#################################################################################
+
+# REGRESIJA                                     
 
 
-# DEKLARACIJA FUNKCIJ ZA OCENJEVANJE #
 
-```{r}
+## DEKLARACIJA FUNKCIJ ZA OCENJEVANJE 
+
+```{r Funkcije}
 mae <- function(obs, pred)
 {
 	mean(abs(obs - pred))
@@ -386,111 +384,8 @@ RMSE -> relativna srednja kvadratna napaka
 
 
 
-##############################################
-# MODELI NAUČENI NA CELOTNI MNOŽICI PODATKOV #
-##############################################
 
-```{r}
-dataForRegression <- sortedDF
-set.seed(0)
-sel <- sample(1:nrow(dataForRegression), as.integer(nrow(dataForRegression) * 0.7), F)
-train <- dataForRegression[sel,]
-test <- dataForRegression[-sel,]
-```
-
-Podatki za regresijo se preberejo iz v naprej pripravljenega dataframe-a "sortedDF". Nastavi se učne in testne podatke, ki se jih razdeli v razmerju 3:7.
-
-
-# LINEARNA REGRESIJA #
-
-```{r}
-model <- lm(poraba ~ ., train)
-predicted <- predict(model, test)
-observed <- test$poraba
-plot(observed)
-points(predicted, col="red")
-
-mae(observed, predicted)
-mse(observed, predicted)
-sqrt(mse(observed, predicted))
-```
-
-Linearna regresija nam za vse podatke vrne:
-
-SREDNJA ABSOLUTNA NAPAKA = 82.04917
-
-SREDNJA KVADRATNA NAPAKA (korenjena, da je v enotah atributa "poraba") = 137.2372
-
-
-# DODATNI TEST S TRIVIALNIM MODELOM (GLEDE NA LINEARNEGA) #
-
-```{r}
-meanVal <- mean(train$poraba)
-meanVal
-
-predTrivial <- rep(meanVal, nrow(test))
-mae(observed, predTrivial)
-mse(observed, predTrivial)
-sqrt(mse(observed, predTrivial))
-
-```
-Izračunamo povprečno koncentracijo porabe v testni množici(meanVal). Nato izračunamo še srednjo absolutno in
-srednjo kvadratno napako za trivialen model, ki ga zgradimo s funkcijo "rep(meanVal, nrow(test)).
-
-Opazimo, da ima naš linearni model manjši obe napaki, kar pomeni, da se je linearni model nekaj naučil in je
-boljši od trivialnega modela.
-
-
-```{r}
-rmae(observed, predicted, mean(train$poraba))
-rmse(observed, predicted, mean(train$poraba))
-```
-
-S pomočjo relativnih mer ocenimo naš linearni model v primerjavi s trivialnim. Zgornja vrnjena številka prikazuje
-relativno srednjo absolutno napako, spodnja pa relativno srednjo kvadratno napako. Ker so vrednosti manjše od 1, to 
-pomeni, da je linearni model bojši od trivialnega.
-
-
-# regresijsko drevo #
-
-```{r}
-rt.model <- rpart(poraba ~ ., data=train)
-rpart.plot(rt.model)
-predicted <- predict(rt.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
-```
-
-Regresijsko drevo nam za vse podatke vrne:
-
-SREDNJA ABSOLUTNA NAPAKA = 53.48211
-
-RELATIVNA SREDNJA ABSOLUTNA NAPAKA = 0.3533899 
-(Bližje kot je številka, ki jo vrne RMAE, 0, boljši je model.)
-
-
-# nakljucni gozd #
-
-```{r}
-library(randomForest)
-
-rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
-predicted <- predict(rf.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
-
-```
-
-Naključni gozd nam za vse podatke vrne:
-
-SREDNJA ABSOLUTNA NAPAKA = 27.48959
-
-RELATIVNA SREDNJA ABSOLUTNA NAPAKA = 0.181641
-
-
-
-
-# IZBIRANJE ATRIBUTOV Z NAJVEČJIM VPLIVOM NA CILJNO/ODVISNO SPREMENLJIVKO #
+## IZBIRANJE ATRIBUTOV Z NAJVEČJIM VPLIVOM NA CILJNO/ODVISNO SPREMENLJIVKO 
 
 ```{r}
 dataForRegression = subset(sortedDF, select = -c(norm_poraba, teden, UNIX, prev_temp, temp_teden))
@@ -512,179 +407,46 @@ Preveri se kateri atributi največ pripomorejo pri napovedovanju ciljne spremenl
 tiste, ki imajo najvišjo oceno. Zaradi prevelike količine podatkov se preveri za vsak mesec posebej(npr. zgoraj za januar).
 
 ```{r}
-dataForRegression = subset(dataForRegression, select = -c(mesec, vikend, padavine, regija, ura, namembnost, oblacnost))
+dataForRegression = subset(dataForRegression, select = -c(vikend, padavine, regija, ura, namembnost, oblacnost))
 summary(dataForRegression)
 ```
 
-Množica podatkov se zmanjša na 9 atributov (poleg atributa "poraba"), ki najbolj pripomorejo k napovedovanju atributa "poraba".
-
-
-# LINEARNA REGRESIJA #   
+Množica podatkov se zmanjša na 10 atributov (poleg atributa "poraba"), ki najbolj pripomorejo k napovedovanju atributa "poraba".
 
 ```{r}
-set.seed(0)
-sel <- sample(1:nrow(dataForRegression), as.integer(nrow(dataForRegression) * 0.7), F)
-train <- dataForRegression[sel,]
-test <- dataForRegression[-sel,]
-
-model <- lm(poraba ~ ., train)
-predicted <- predict(model, test)
-observed <- test$poraba
-plot(observed)
-points(predicted, col="red")
-
-mae(observed, predicted)
-mse(observed, predicted)
-sqrt(mse(observed, predicted))
+dataForRegressionAll <- sortedDF
 ```
 
-Nastavimo seed na 0, da je ob vsakem zagonu enaka naključnost.Vsi podakti se razdelijo na testno in 
-učno množico v razmerju 3:7. Model se naredi glede na opazovano spremenljivko "poraba".Graf za te
-podatke je prikazan zgoraj.V tem primeru je linearna regresija narejena za vse mesece.
-
-SREDNJA ABSOLUTNA NAPAKA = 99.04282
-
-SREDNJA KVADRATNA NAPAKA (korenjena, da je v enotah atributa "poraba") = 180.3948
+Nastavi se še spremenljivka za vse podatke, ki bodo uporabljeni v regresiji.
 
 
-# regresijsko drevo #
+
+
+## EVALVACIJA MODELOV PO MESECIH (REGRESIJA) 
 
 ```{r}
-rt.model <- rpart(poraba ~ ., data=train)
-rpart.plot(rt.model)
-predicted <- predict(rt.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+podatki <- list()
 ```
 
-Regresijsko drevo nam za vse podatke vrne:
+List "podatki" bo držal vse podatke za kasnejšo primerjavo.
 
-SREDNJA ABSOLUTNA NAPAKA = 63.07831
-
-RELATIVNA SREDNJA ABSOLUTNA NAPAKA = 0.416798 
-(Bližje kot je številka, ki jo vrne RMAE, 0, boljši je model.)
-
-
-# nakljucni gozd #
+## FEBRUAR 
 
 ```{r}
-rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
-predicted <- predict(rf.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+dataForRegressionJanAll = filter(dataForRegressionAll, mesec == 1)
+dataForRegressionFebAll = filter(dataForRegressionAll, mesec == 2)
+
+dataForTrainAll <- dataForRegressionJanAll
+dataForTestAll <- dataForRegressionFebAll
+
+trainAll <- dataForTrainAll
+testAll <- dataForTestAll
 ```
 
-Naključni gozd nam za vse podatke vrne:
-
-SREDNJA ABSOLUTNA NAPAKA = 
-
-RELATIVNA SREDNJA ABSOLUTNA NAPAKA = 
-
-
-
-
-#############################################
-# EVALVACIJA MODELOV PO MESECIH (REGRESIJA) #
-#############################################
-
 ```{r}
-dataForRegression = subset(sortedDF, select = -c(norm_poraba, teden, UNIX, prev_temp, temp_teden, vikend, padavine, regija, ura, namembnost, oblacnost))
-summary(dataForRegression)
-```
-Ponovno se nastavi spremenljivka "dataForRegression". 
+dataForRegressionJan = subset(filter(dataForRegression, mesec == 1), select = -c(mesec))
+dataForRegressionFeb = subset(filter(dataForRegression, mesec == 2), select = -c(mesec))
 
-```{r}
-dataForRegressionJan <- filter(dataForRegression, mesec == 1)
-dataForRegressionJan = subset(dataForRegressionJan, select = -c(mesec))
-```
-
-Izlušči se podatke samo za januar.
-
-```{r}
-dataForRegressionFeb <- filter(dataForRegression, mesec == 2)
-dataForRegressionFeb = subset(dataForRegressionFeb, select = -c(mesec))
-```
-
-Izlušči se podatke samo za februar.
-
-```{r}
-dataForRegressionMar <- filter(dataForRegression, mesec == 3)
-dataForRegressionMar = subset(dataForRegressionMar, select = -c(mesec))
-```
-
-Izlušči se podatke samo za marec.
-
-```{r}
-dataForRegressionApr <- filter(dataForRegression, mesec == 4)
-dataForRegressionApr = subset(dataForRegressionApr, select = -c(mesec))
-```
-
-Izlušči se podatke samo za april.
-
-```{r}
-dataForRegressionMay <- filter(dataForRegression, mesec == 5)
-dataForRegressionMay = subset(dataForRegressionMay, select = -c(mesec))
-```
-
-Izlušči se podatke samo za maj.
-
-```{r}
-dataForRegressionJun <- filter(dataForRegression, mesec == 6)
-dataForRegressionJun = subset(dataForRegressionJun, select = -c(mesec))
-```
-
-Izlušči se podatke samo za junij.
-
-```{r}
-dataForRegressionJul <- filter(dataForRegression, mesec == 7)
-dataForRegressionJul = subset(dataForRegressionJul, select = -c(mesec))
-```
-
-Izlušči se podatke samo za julij.
-
-```{r}
-dataForRegressionAug <- filter(dataForRegression, mesec == 8)
-dataForRegressionAug = subset(dataForRegressionAug, select = -c(mesec))
-```
-
-Izlušči se podatke samo za august.
-
-```{r}
-dataForRegressionSep <- filter(dataForRegression, mesec == 9)
-dataForRegressionSep = subset(dataForRegressionSep, select = -c(mesec))
-```
-
-Izlušči se podatke samo za september.
-
-```{r}
-dataForRegressionOct <- filter(dataForRegression, mesec == 10)
-dataForRegressionOct = subset(dataForRegressionOct, select = -c(mesec))
-```
-
-Izlušči se podatke samo za oktober.
-
-```{r}
-dataForRegressionNov <- filter(dataForRegression, mesec == 11)
-dataForRegressionNov = subset(dataForRegressionNov, select = -c(mesec))
-```
-
-Izlušči se podatke samo za november.
-
-```{r}
-dataForRegressionDec <- filter(dataForRegression, mesec == 12)
-dataForRegressionDec = subset(dataForRegressionDec, select = -c(mesec))
-```
-
-Izlušči se podatke samo za december.
-
-
-
-
-###########
-# FEBRUAR #
-###########
-
-```{r}
 dataForTrain <- dataForRegressionJan
 dataForTest <- dataForRegressionFeb
 
@@ -692,496 +454,1129 @@ train <- dataForTrain
 test <- dataForTest
 ```
 
-Nastavi se učne in testne podatke. V tem primeru bomo testirali januarske na februarskih.
+Nastavi se učne in testne podatke. V tem primeru bomo testirali modele narejene iz januarskih podatkov na februarskih podatkih. Zgornji odlomek kode predstavlja vse podatke, spodnji pa le izbrane atribute.
 
-# LINEARNA REGRESIJA #
+### LINEARNA REGRESIJA 
+
+#### Vsi podatki
+
+```{r}
+model <- lm(poraba ~ ., trainAll)
+predicted <- predict(model, testAll)
+observed <- testAll$poraba
+
+podatki[[1]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
+cat("\014")
+
+plot(observed)
+points(predicted, col="red")
+```
+
+#### Izbrani podatki
+
 ```{r}
 model <- lm(poraba ~ ., train)
 predicted <- predict(model, test)
 observed <- test$poraba
+
+podatki[[2]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
+cat("\014")
+
 plot(observed)
 points(predicted, col="red")
-
-mae(observed, predicted)
-mse(observed, predicted)
-sqrt(mse(observed, predicted))
 ```
 
-# regresijsko drevo #
+### REGRESIJSKO DREVO 
+
+#### Vsi podatki
+
+```{r}
+rt.model <- rpart(poraba ~ ., data=trainAll)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, testAll)
+
+podatki[[3]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rt.model <- rpart(poraba ~ ., data=train)
 rpart.plot(rt.model)
 predicted <- predict(rt.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[4]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
 ```
 
-# nakljucni gozd #
+### NAKLJUČNI GOZD
+
+#### Vsi podatki
+
+```{r}
+rf.model <- randomForest(poraba ~ ., trainAll, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, testAll)
+
+podatki[[5]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
 predicted <- predict(rf.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[6]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
 ```
 
 
 
-#########
-# MAREC #
-#########
 
+## MAREC 
 
 ```{r}
-dataForTrain <- rbind(dataForRegressionJan, dataForRegressionFeb)
-dataForTest <- dataForRegressionMar
+dataForRegressionFebAll = filter(dataForRegressionAll, mesec == 2)
+dataForRegressionMarAll = filter(dataForRegressionAll, mesec == 3)
+
+dataForTrainAll <- rbind(dataForTrainAll, dataForRegressionFebAll)
+
+trainAll <- dataForTrainAll
+testAll <- dataForRegressionMarAll
+```
+
+```{r}
+dataForRegressionFeb = subset(filter(dataForRegression, mesec == 2), select = -c(mesec))
+dataForRegressionMar = subset(filter(dataForRegression, mesec == 3), select = -c(mesec))
+
+dataForTrain <- rbind(dataForTrain, dataForRegressionFeb)
 
 train <- dataForTrain
-test <- dataForTest
+test <- dataForRegressionMar
 ```
-Nastavi se učne in testne podatke. V tem primeru bomo testirali vse predhodnje podatke + februar na marčevskih.
 
-# LINEARNA REGRESIJA #
+Nastavi se učne in testne podatke. V tem primeru bomo testirali modele narejene iz vseh dosedanjih + februarskih testirali na marčevskih podatkih. Zgornji odlomek kode predstavlja vse podatke, spodnji pa le izbrane atribute.
+
+### LINEARNA REGRESIJA 
+
+#### Vsi podatki
+
+```{r}
+model <- lm(poraba ~ ., trainAll)
+predicted <- predict(model, testAll)
+observed <- testAll$poraba
+
+podatki[[7]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
+cat("\014")
+
+plot(observed)
+points(predicted, col="red")
+```
+
+#### Izbrani podatki
+
 ```{r}
 model <- lm(poraba ~ ., train)
 predicted <- predict(model, test)
 observed <- test$poraba
+
+podatki[[8]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
+cat("\014")
+
 plot(observed)
 points(predicted, col="red")
-
-mae(observed, predicted)
-mse(observed, predicted)
-sqrt(mse(observed, predicted))
 ```
 
-# regresijsko drevo #
+### REGRESIJSKO DREVO
+
+#### Vsi podatki
+
+```{r}
+rt.model <- rpart(poraba ~ ., data=trainAll)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, testAll)
+
+podatki[[9]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rt.model <- rpart(poraba ~ ., data=train)
 rpart.plot(rt.model)
 predicted <- predict(rt.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[10]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
 ```
 
-# nakljucni gozd #
+### NAKLJUČNI GOZD
+
+#### Vsi podatki
+
+```{r}
+rf.model <- randomForest(poraba ~ ., trainAll, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, testAll)
+
+podatki[[11]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
 predicted <- predict(rf.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[12]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
 ```
 
 
 
-#########
-# APRIL #
-#########
 
+## APRIL 
 
 ```{r}
+dataForRegressionMarAll = filter(dataForRegressionAll, mesec == 3)
+dataForRegressionAprAll = filter(dataForRegressionAll, mesec == 4)
+
+dataForTrainAll <- rbind(dataForTrainAll, dataForRegressionMarAll)
+
+trainAll <- dataForTrainAll
+testAll <- dataForRegressionAprAll
+```
+
+```{r}
+dataForRegressionMar = subset(filter(dataForRegression, mesec == 3), select = -c(mesec))
+dataForRegressionApr = subset(filter(dataForRegression, mesec == 4), select = -c(mesec))
+
 dataForTrain <- rbind(dataForTrain, dataForRegressionMar)
-dataForTest <- dataForRegressionApr
 
 train <- dataForTrain
-test <- dataForTest
+test <- dataForRegressionApr
 ```
-Nastavi se učne in testne podatke. V tem primeru bomo testirali vse predhodnje podatke + marec na aprilskih.
 
-# LINEARNA REGRESIJA #
+Nastavi se učne in testne podatke. V tem primeru bomo testirali modele narejene iz vseh dosedanjih + marčevskih testirali na aprilskih podatkih. Zgornji odlomek kode predstavlja vse podatke, spodnji pa le izbrane atribute.
+
+### LINEARNA REGRESIJA 
+
+#### Vsi podatki
+
+```{r}
+model <- lm(poraba ~ ., trainAll)
+predicted <- predict(model, testAll)
+observed <- testAll$poraba
+
+podatki[[13]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
+cat("\014")
+
+plot(observed)
+points(predicted, col="red")
+```
+
+#### Izbrani podatki
+
 ```{r}
 model <- lm(poraba ~ ., train)
 predicted <- predict(model, test)
 observed <- test$poraba
+
+podatki[[14]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
+cat("\014")
+
 plot(observed)
 points(predicted, col="red")
-
-mae(observed, predicted)
-mse(observed, predicted)
-sqrt(mse(observed, predicted))
 ```
 
-# regresijsko drevo #
+### REGRESIJSKO DREVO
+
+#### Vsi podatki
+
+```{r}
+rt.model <- rpart(poraba ~ ., data=trainAll)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, testAll)
+
+podatki[[15]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rt.model <- rpart(poraba ~ ., data=train)
 rpart.plot(rt.model)
 predicted <- predict(rt.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[16]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
 ```
 
-# nakljucni gozd #
+### NAKLJUČNI GOZD
+
+#### Vsi podatki
+
+```{r}
+rf.model <- randomForest(poraba ~ ., trainAll, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, testAll)
+
+podatki[[17]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
 predicted <- predict(rf.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[18]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
 ```
 
 
 
-#######
-# MAJ #
-#######
+
+## MAJ 
 
 
 ```{r}
+dataForRegressionAprAll = filter(dataForRegressionAll, mesec == 4)
+dataForRegressionMayAll = filter(dataForRegressionAll, mesec == 5)
+
+dataForTrainAll <- rbind(dataForTrainAll, dataForRegressionAprAll)
+
+trainAll <- dataForTrainAll
+testAll <- dataForRegressionMayAll
+```
+
+```{r}
+dataForRegressionApr = subset(filter(dataForRegression, mesec == 4), select = -c(mesec))
+dataForRegressionMay = subset(filter(dataForRegression, mesec == 5), select = -c(mesec))
+
 dataForTrain <- rbind(dataForTrain, dataForRegressionApr)
-dataForTest <- dataForRegressionMay
 
 train <- dataForTrain
-test <- dataForTest
+test <- dataForRegressionMay
 ```
-Nastavi se učne in testne podatke. V tem primeru bomo testirali vse predhodnje podatke + april na majevih.
 
-# LINEARNA REGRESIJA #
+Nastavi se učne in testne podatke. V tem primeru bomo testirali modele narejene iz vseh dosedanjih + aprilskih testirali na majevih podatkih. Zgornji odlomek kode predstavlja vse podatke, spodnji pa le izbrane atribute.
+
+### LINEARNA REGRESIJA 
+
+#### Vsi podatki
+
+```{r}
+model <- lm(poraba ~ ., trainAll)
+predicted <- predict(model, testAll)
+observed <- testAll$poraba
+
+podatki[[19]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
+cat("\014")
+
+plot(observed)
+points(predicted, col="red")
+```
+
+#### Izbrani podatki
+
 ```{r}
 model <- lm(poraba ~ ., train)
 predicted <- predict(model, test)
 observed <- test$poraba
+
+podatki[[20]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
+cat("\014")
+
 plot(observed)
 points(predicted, col="red")
-
-mae(observed, predicted)
-mse(observed, predicted)
-sqrt(mse(observed, predicted))
 ```
 
-# regresijsko drevo #
+### REGRESIJSKO DREVO
+
+#### Vsi podatki
+
+```{r}
+rt.model <- rpart(poraba ~ ., data=trainAll)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, testAll)
+
+podatki[[21]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rt.model <- rpart(poraba ~ ., data=train)
 rpart.plot(rt.model)
 predicted <- predict(rt.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[22]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
 ```
 
-# nakljucni gozd #
+### NAKLJUČNI GOZD
+
+#### Vsi podatki
+
+```{r}
+rf.model <- randomForest(poraba ~ ., trainAll, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, testAll)
+
+podatki[[23]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
 predicted <- predict(rf.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[24]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
 ```
 
 
 
 
-#########
-# JUNIJ #
-#########
-
+## JUNIJ 
 
 ```{r}
+dataForRegressionMayAll = filter(dataForRegressionAll, mesec == 5)
+dataForRegressionJunAll = filter(dataForRegressionAll, mesec == 6)
+
+dataForTrainAll <- rbind(dataForTrainAll, dataForRegressionMayAll)
+
+trainAll <- dataForTrainAll
+testAll <- dataForRegressionJunAll
+```
+
+```{r}
+dataForRegressionMay = subset(filter(dataForRegression, mesec == 5), select = -c(mesec))
+dataForRegressionJun = subset(filter(dataForRegression, mesec == 6), select = -c(mesec))
+
 dataForTrain <- rbind(dataForTrain, dataForRegressionMay)
-dataForTest <- dataForRegressionJun
 
 train <- dataForTrain
-test <- dataForTest
+test <- dataForRegressionJun
 ```
-Nastavi se učne in testne podatke. V tem primeru bomo testirali vse predhodnje podatke + maj na junijskih.
 
-# LINEARNA REGRESIJA #
+Nastavi se učne in testne podatke. V tem primeru bomo testirali modele narejene iz vseh dosedanjih + majevih testirali na junijskih podatkih. Zgornji odlomek kode predstavlja vse podatke, spodnji pa le izbrane atribute.
+
+### LINEARNA REGRESIJA 
+
+#### Vsi podatki
+
+```{r}
+model <- lm(poraba ~ ., trainAll)
+predicted <- predict(model, testAll)
+observed <- testAll$poraba
+
+podatki[[25]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
+cat("\014")
+
+plot(observed)
+points(predicted, col="red")
+```
+
+#### Izbrani podatki
+
 ```{r}
 model <- lm(poraba ~ ., train)
 predicted <- predict(model, test)
 observed <- test$poraba
+
+podatki[[26]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
+cat("\014")
+
 plot(observed)
 points(predicted, col="red")
-
-mae(observed, predicted)
-mse(observed, predicted)
-sqrt(mse(observed, predicted))
 ```
 
-# regresijsko drevo #
+### REGRESIJSKO DREVO
+
+#### Vsi podatki
+
+```{r}
+rt.model <- rpart(poraba ~ ., data=trainAll)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, testAll)
+
+podatki[[27]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rt.model <- rpart(poraba ~ ., data=train)
 rpart.plot(rt.model)
 predicted <- predict(rt.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[28]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
 ```
 
-# nakljucni gozd #
+### NAKLJUČNI GOZD
+
+#### Vsi podatki
+
+```{r}
+rf.model <- randomForest(poraba ~ ., trainAll, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, testAll)
+
+podatki[[29]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
 predicted <- predict(rf.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[30]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
 ```
 
 
 
-#########
-# JULIJ #
-#########
+
+## JULIJ 
 
 
 ```{r}
+dataForRegressionJunAll = filter(dataForRegressionAll, mesec == 6)
+dataForRegressionJulAll = filter(dataForRegressionAll, mesec == 7)
+
+dataForTrainAll <- rbind(dataForTrainAll, dataForRegressionJunAll)
+
+trainAll <- dataForTrainAll
+testAll <- dataForRegressionJulAll
+```
+
+```{r}
+dataForRegressionJun = subset(filter(dataForRegression, mesec == 6), select = -c(mesec))
+dataForRegressionJul = subset(filter(dataForRegression, mesec == 7), select = -c(mesec))
+
 dataForTrain <- rbind(dataForTrain, dataForRegressionJun)
-dataForTest <- dataForRegressionJul
 
 train <- dataForTrain
-test <- dataForTest
+test <- dataForRegressionJul
 ```
-Nastavi se učne in testne podatke. V tem primeru bomo testirali vse predhodnje podatke + junij na julijskih.
 
-# LINEARNA REGRESIJA #
+Nastavi se učne in testne podatke. V tem primeru bomo testirali modele narejene iz vseh dosedanjih + junijskih testirali na julijskih podatkih. Zgornji odlomek kode predstavlja vse podatke, spodnji pa le izbrane atribute.
+
+### LINEARNA REGRESIJA 
+
+#### Vsi podatki
+
+```{r}
+model <- lm(poraba ~ ., trainAll)
+predicted <- predict(model, testAll)
+observed <- testAll$poraba
+
+podatki[[31]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
+cat("\014")
+
+plot(observed)
+points(predicted, col="red")
+```
+
+#### Izbrani podatki
+
 ```{r}
 model <- lm(poraba ~ ., train)
 predicted <- predict(model, test)
 observed <- test$poraba
+
+podatki[[32]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
+cat("\014")
+
 plot(observed)
 points(predicted, col="red")
-
-mae(observed, predicted)
-mse(observed, predicted)
-sqrt(mse(observed, predicted))
 ```
 
-# regresijsko drevo #
+### REGRESIJSKO DREVO
+
+#### Vsi podatki
+
+```{r}
+rt.model <- rpart(poraba ~ ., data=trainAll)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, testAll)
+
+podatki[[33]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rt.model <- rpart(poraba ~ ., data=train)
 rpart.plot(rt.model)
 predicted <- predict(rt.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[34]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
 ```
 
-# nakljucni gozd #
+### NAKLJUČNI GOZD
+
+#### Vsi podatki
+
+```{r}
+rf.model <- randomForest(poraba ~ ., trainAll, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, testAll)
+
+podatki[[35]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
 predicted <- predict(rf.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[36]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
 ```
 
 
 
-##########
-# AUGUST #
-##########
 
+## AUGUST 
 
 ```{r}
+dataForRegressionJulAll = filter(dataForRegressionAll, mesec == 7)
+dataForRegressionAugAll = filter(dataForRegressionAll, mesec == 8)
+
+dataForTrainAll <- rbind(dataForTrainAll, dataForRegressionJulAll)
+
+trainAll <- dataForTrainAll
+testAll <- dataForRegressionAugAll
+```
+
+```{r}
+dataForRegressionJul = subset(filter(dataForRegression, mesec == 7), select = -c(mesec))
+dataForRegressionAug = subset(filter(dataForRegression, mesec == 8), select = -c(mesec))
+
 dataForTrain <- rbind(dataForTrain, dataForRegressionJul)
-dataForTest <- dataForRegressionAug
 
 train <- dataForTrain
-test <- dataForTest
+test <- dataForRegressionAug
 ```
-Nastavi se učne in testne podatke. V tem primeru bomo testirali vse predhodnje podatke + julij na augustovih.
 
-# LINEARNA REGRESIJA #
+Nastavi se učne in testne podatke. V tem primeru bomo testirali modele narejene iz vseh dosedanjih + julijskih testirali na avgustovih podatkih. Zgornji odlomek kode predstavlja vse podatke, spodnji pa le izbrane atribute.
+
+### LINEARNA REGRESIJA 
+
+#### Vsi podatki
+
+```{r}
+model <- lm(poraba ~ ., trainAll)
+predicted <- predict(model, testAll)
+observed <- testAll$poraba
+
+podatki[[37]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
+cat("\014")
+
+plot(observed)
+points(predicted, col="red")
+```
+
+#### Izbrani podatki
+
 ```{r}
 model <- lm(poraba ~ ., train)
 predicted <- predict(model, test)
 observed <- test$poraba
+
+podatki[[38]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
+cat("\014")
+
 plot(observed)
 points(predicted, col="red")
-
-mae(observed, predicted)
-mse(observed, predicted)
-sqrt(mse(observed, predicted))
 ```
 
-# regresijsko drevo #
+### REGRESIJSKO DREVO
+
+#### Vsi podatki
+
+```{r}
+rt.model <- rpart(poraba ~ ., data=trainAll)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, testAll)
+
+podatki[[39]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rt.model <- rpart(poraba ~ ., data=train)
 rpart.plot(rt.model)
 predicted <- predict(rt.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[40]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
 ```
 
-# nakljucni gozd #
+### NAKLJUČNI GOZD
+
+#### Vsi podatki
+
+```{r}
+rf.model <- randomForest(poraba ~ ., trainAll, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, testAll)
+
+podatki[[41]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
 predicted <- predict(rf.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[42]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
 ```
 
 
 
-#############
-# SEPTEMBER #
-#############
 
+## SEPTEMBER 
 
 ```{r}
+dataForRegressionAugAll = filter(dataForRegressionAll, mesec == 8)
+dataForRegressionSepAll = filter(dataForRegressionAll, mesec == 9)
+
+dataForTrainAll <- rbind(dataForTrainAll, dataForRegressionAugAll)
+
+trainAll <- dataForTrainAll
+testAll <- dataForRegressionSepAll
+```
+
+```{r}
+dataForRegressionAug = subset(filter(dataForRegression, mesec == 8), select = -c(mesec))
+dataForRegressionSep = subset(filter(dataForRegression, mesec == 9), select = -c(mesec))
+
 dataForTrain <- rbind(dataForTrain, dataForRegressionAug)
-dataForTest <- dataForRegressionSep
 
 train <- dataForTrain
-test <- dataForTest
+test <- dataForRegressionSep
 ```
-Nastavi se učne in testne podatke. V tem primeru bomo testirali vse predhodnje podatke + august na septembrskih.
 
-# LINEARNA REGRESIJA #
+Nastavi se učne in testne podatke. V tem primeru bomo testirali modele narejene iz vseh dosedanjih + avgustovih testirali na septemrskih podatkih. Zgornji odlomek kode predstavlja vse podatke, spodnji pa le izbrane atribute.
+
+### LINEARNA REGRESIJA 
+
+#### Vsi podatki
+
+```{r}
+model <- lm(poraba ~ ., trainAll)
+predicted <- predict(model, testAll)
+observed <- testAll$poraba
+
+podatki[[43]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
+cat("\014")
+
+plot(observed)
+points(predicted, col="red")
+```
+
+#### Izbrani podatki
+
 ```{r}
 model <- lm(poraba ~ ., train)
 predicted <- predict(model, test)
 observed <- test$poraba
+
+podatki[[44]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
+cat("\014")
+
 plot(observed)
 points(predicted, col="red")
-
-mae(observed, predicted)
-mse(observed, predicted)
-sqrt(mse(observed, predicted))
 ```
 
-# regresijsko drevo #
+### REGRESIJSKO DREVO
+
+#### Vsi podatki
+
+```{r}
+rt.model <- rpart(poraba ~ ., data=trainAll)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, testAll)
+
+podatki[[45]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rt.model <- rpart(poraba ~ ., data=train)
 rpart.plot(rt.model)
 predicted <- predict(rt.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[46]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
 ```
 
-# nakljucni gozd #
+### NAKLJUČNI GOZD
+
+#### Vsi podatki
+
+```{r}
+rf.model <- randomForest(poraba ~ ., trainAll, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, testAll)
+
+podatki[[47]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
 predicted <- predict(rf.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[48]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
 ```
 
 
 
-###########
-# OKTOBER #
-###########
 
+## OKTOBER 
 
 ```{r}
+dataForRegressionSepAll = filter(dataForRegressionAll, mesec == 9)
+dataForRegressionOctAll = filter(dataForRegressionAll, mesec == 10)
+
+dataForTrainAll <- rbind(dataForTrainAll, dataForRegressionSepAll)
+
+trainAll <- dataForTrainAll
+testAll <- dataForRegressionOctAll
+```
+
+```{r}
+dataForRegressionSep = subset(filter(dataForRegression, mesec == 9), select = -c(mesec))
+dataForRegressionOct = subset(filter(dataForRegression, mesec == 10), select = -c(mesec))
+
 dataForTrain <- rbind(dataForTrain, dataForRegressionSep)
-dataForTest <- dataForRegressionOct
 
 train <- dataForTrain
-test <- dataForTest
+test <- dataForRegressionOct
 ```
-Nastavi se učne in testne podatke. V tem primeru bomo testirali vse predhodnje podatke + september na oktobrskih.
 
-# LINEARNA REGRESIJA #
+Nastavi se učne in testne podatke. V tem primeru bomo testirali modele narejene iz vseh dosedanjih + septembrskih testirali na oktobrskih podatkih. Zgornji odlomek kode predstavlja vse podatke, spodnji pa le izbrane atribute.
+
+### LINEARNA REGRESIJA 
+
+#### Vsi podatki
+
+```{r}
+model <- lm(poraba ~ ., trainAll)
+predicted <- predict(model, testAll)
+observed <- testAll$poraba
+
+podatki[[49]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
+cat("\014")
+
+plot(observed)
+points(predicted, col="red")
+```
+
+#### Izbrani podatki
+
 ```{r}
 model <- lm(poraba ~ ., train)
 predicted <- predict(model, test)
 observed <- test$poraba
+
+podatki[[50]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
+cat("\014")
+
 plot(observed)
 points(predicted, col="red")
-
-mae(observed, predicted)
-mse(observed, predicted)
-sqrt(mse(observed, predicted))
 ```
 
-# regresijsko drevo #
+### REGRESIJSKO DREVO
+
+#### Vsi podatki
+
+```{r}
+rt.model <- rpart(poraba ~ ., data=trainAll)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, testAll)
+
+podatki[[51]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rt.model <- rpart(poraba ~ ., data=train)
 rpart.plot(rt.model)
 predicted <- predict(rt.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[52]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
 ```
 
-# nakljucni gozd #
+### NAKLJUČNI GOZD
+
+#### Vsi podatki
+
+```{r}
+rf.model <- randomForest(poraba ~ ., trainAll, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, testAll)
+
+podatki[[53]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
 predicted <- predict(rf.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[54]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
 ```
 
 
 
-############
-# NOVEMBER #
-############
 
+## NOVEMBER 
 
 ```{r}
+dataForRegressionOctAll = filter(dataForRegressionAll, mesec == 10)
+dataForRegressionNovAll = filter(dataForRegressionAll, mesec == 11)
+
+dataForTrainAll <- rbind(dataForTrainAll, dataForRegressionOctAll)
+
+trainAll <- dataForTrainAll
+testAll <- dataForRegressionNovAll
+```
+
+```{r}
+dataForRegressionOct = subset(filter(dataForRegression, mesec == 10), select = -c(mesec))
+dataForRegressionNov = subset(filter(dataForRegression, mesec == 11), select = -c(mesec))
+
 dataForTrain <- rbind(dataForTrain, dataForRegressionOct)
-dataForTest <- dataForRegressionNov
 
 train <- dataForTrain
-test <- dataForTest
+test <- dataForRegressionNov
 ```
-Nastavi se učne in testne podatke. V tem primeru bomo testirali vse predhodnje podatke + oktober na novemberskih.
 
-# LINEARNA REGRESIJA #
+Nastavi se učne in testne podatke. V tem primeru bomo testirali modele narejene iz vseh dosedanjih + oktobrskih testirali na novembrskih podatkih. Zgornji odlomek kode predstavlja vse podatke, spodnji pa le izbrane atribute.
+
+### LINEARNA REGRESIJA 
+
+#### Vsi podatki
+
+```{r}
+model <- lm(poraba ~ ., trainAll)
+predicted <- predict(model, testAll)
+observed <- testAll$poraba
+
+podatki[[55]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
+cat("\014")
+
+plot(observed)
+points(predicted, col="red")
+```
+
+#### Izbrani podatki
+
 ```{r}
 model <- lm(poraba ~ ., train)
 predicted <- predict(model, test)
 observed <- test$poraba
+
+podatki[[56]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
+cat("\014")
+
 plot(observed)
 points(predicted, col="red")
-
-mae(observed, predicted)
-mse(observed, predicted)
-sqrt(mse(observed, predicted))
 ```
 
-# regresijsko drevo #
+### REGRESIJSKO DREVO
+
+#### Vsi podatki
+
+```{r}
+rt.model <- rpart(poraba ~ ., data=trainAll)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, testAll)
+
+podatki[[57]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rt.model <- rpart(poraba ~ ., data=train)
 rpart.plot(rt.model)
 predicted <- predict(rt.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[58]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
 ```
 
-# nakljucni gozd #
+### NAKLJUČNI GOZD
+
+#### Vsi podatki
+
+```{r}
+rf.model <- randomForest(poraba ~ ., trainAll, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, testAll)
+
+podatki[[59]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
 predicted <- predict(rf.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[60]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
 ```
 
 
 
-############
-# DECEMBER #
-############
 
+## DECEMBER 
 
 ```{r}
+dataForRegressionNovAll = filter(dataForRegressionAll, mesec == 11)
+dataForRegressionDecAll = filter(dataForRegressionAll, mesec == 12)
+
+dataForTrainAll <- rbind(dataForTrainAll, dataForRegressionNovAll)
+
+trainAll <- dataForTrainAll
+testAll <- dataForRegressionDecAll
+```
+
+```{r}
+dataForRegressionNov = subset(filter(dataForRegression, mesec == 11), select = -c(mesec))
+dataForRegressionDec = subset(filter(dataForRegression, mesec == 12), select = -c(mesec))
+
 dataForTrain <- rbind(dataForTrain, dataForRegressionNov)
-dataForTest <- dataForRegressionDec
 
 train <- dataForTrain
-test <- dataForTest
+test <- dataForRegressionDec
 ```
-Nastavi se učne in testne podatke. V tem primeru bomo testirali vse predhodnje podatke + novemberske na decembrskih.
 
-# LINEARNA REGRESIJA #
+Nastavi se učne in testne podatke. V tem primeru bomo testirali modele narejene iz vseh dosedanjih + novembrskih testirali na decembrskih podatkih. Zgornji odlomek kode predstavlja vse podatke, spodnji pa le izbrane atribute.
+
+### LINEARNA REGRESIJA 
+
+#### Vsi podatki
+
+```{r}
+model <- lm(poraba ~ ., trainAll)
+predicted <- predict(model, testAll)
+observed <- testAll$poraba
+
+podatki[[61]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
+cat("\014")
+
+plot(observed)
+points(predicted, col="red")
+```
+
+#### Izbrani podatki
+
 ```{r}
 model <- lm(poraba ~ ., train)
 predicted <- predict(model, test)
 observed <- test$poraba
+
+podatki[[62]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
+cat("\014")
+
 plot(observed)
 points(predicted, col="red")
-
-mae(observed, predicted)
-mse(observed, predicted)
-sqrt(mse(observed, predicted))
 ```
 
-# regresijsko drevo #
+### REGRESIJSKO DREVO
+
+#### Vsi podatki
+
+```{r}
+rt.model <- rpart(poraba ~ ., data=trainAll)
+rpart.plot(rt.model)
+predicted <- predict(rt.model, testAll)
+
+podatki[[63]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rt.model <- rpart(poraba ~ ., data=train)
 rpart.plot(rt.model)
 predicted <- predict(rt.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[64]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
 ```
 
-# nakljucni gozd #
+### NAKLJUČNI GOZD
+
+#### Vsi podatki
+
+```{r}
+rf.model <- randomForest(poraba ~ ., trainAll, ntree=10, norm.votes=FALSE)
+predicted <- predict(rf.model, testAll)
+
+podatki[[65]] <- c(mae(testAll$poraba, predicted), rmae(testAll$poraba, predicted, mean(trainAll$poraba)))
+cat("\014")
+```
+
+#### Izbrani podatki
+
 ```{r}
 rf.model <- randomForest(poraba ~ ., train, ntree=10, norm.votes=FALSE)
 predicted <- predict(rf.model, test)
-mae(test$poraba, predicted)
-rmae(test$poraba, predicted, mean(train$poraba))
+
+podatki[[66]] <- c(mae(test$poraba, predicted), rmae(test$poraba, predicted, mean(train$poraba)))
+cat("\014")
+```
+
+
+# PRIKAZ PODATKOV REGRESIJE
+
+## LINEARNA REGRESIJA
+
+```{r}
+podatkiRegresija <- read.csv("../../AI-naloga/podatkiRegresija.txt", stringsAsFactors=TRUE)
+podatkiRegresijaLinearna = filter(podatkiRegresija, model == "linearna_regresija")
+podatkiRegresijaLinearnaMae = filter(podatkiRegresijaLinearna, vrsta_napake == "mae")
+podatkiRegresijaLinearnaMaeVsi = filter(podatkiRegresijaLinearnaMae, kolicina_podatkov == "vsi")
+podatkiRegresijaLinearnaMaeIzbrani = filter(podatkiRegresijaLinearnaMae, kolicina_podatkov == "izbrani")
+
+plot(order(podatkiRegresijaLinearnaMaeVsi$mesec), podatkiRegresijaLinearnaMaeVsi$napaka,main="VSI PODATKI - LINEARNA REGRESIJA", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA", type = "h")
+plot(order(podatkiRegresijaLinearnaMaeIzbrani$mesec), podatkiRegresijaLinearnaMaeIzbrani$napaka,main="IZBRANI PODATKI - LINEARNA REGRESIJA", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA", type = "h")
 ```
 
