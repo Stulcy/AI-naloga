@@ -91,8 +91,8 @@ toc()
 
 ```{r Dodan atribut temperatura prejšnjega dne}
 sortedDF$norm_poraba <- factor(sortedDF$norm_poraba, levels=c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA"))
-sortedDF$ura <- factor(sortedDF$ura)
-sortedDF$oblacnost <- factor(sortedDF$oblacnost)
+#sortedDF$ura <- factor(sortedDF$ura)
+#sortedDF$oblacnost <- factor(sortedDF$oblacnost)
 
 sortedDF$prev_temp <- vect
 head(sortedDF)
@@ -379,10 +379,11 @@ toc()
 
 
 ```{r Napoved po naivnem Bayesu paralelizirana}
+library(dplyr)
 tempDF <- list()
 tic()
 predictedBayes <- list()
-predictedBayes <- foreach (i=1:11) %dopar% {
+for (i in 1:11) {
   tempDF[[i]] <- filter(sortedDF, mesec == i+1)
   predictedBayes[[i]] <- predict(nb_list[[i]], tempDF[[i]], type = "class")
 }
@@ -1142,6 +1143,7 @@ tiste, ki imajo najvišjo oceno. Zaradi prevelike količine podatkov se preveri 
 dataForRegression = subset(dataForRegression, select = -c(vikend, padavine, ura, namembnost, oblacnost))
 dataForRegression = filter(dataForRegression, regija == "zahodna")
 dataForRegression = subset(dataForRegression, select = -c(regija))
+dataForRegression$stavba <- as.double(dataForRegression$stavba)
 summary(dataForRegression)
 ```
 
@@ -1151,6 +1153,8 @@ Množica podatkov se zmanjša na 10 atributov (poleg atributa "poraba"), ki najb
 dataForRegressionAll <- sortedDF
 dataForRegressionAll = filter(dataForRegressionAll, regija == "zahodna")
 dataForRegressionAll = subset(dataForRegressionAll, select = -c(regija))
+dataForRegressionAll$ura <- as.double(dataForRegressionAll$ura)
+dataForRegressionAll$stavba <- as.double(dataForRegressionAll$stavba)
 summary(dataForRegressionAll)
 ```
 
