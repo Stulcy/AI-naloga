@@ -24,6 +24,8 @@ Atribute "regija", "namembnost" in "norm_poraba" faktoriziramo, da programski je
 
 ```{r Določitev tipa atributa "datum"}
 library(tictoc)
+library(foreach)
+library(doParallel)
 data$datum <- as.Date(data$datum)
 head(data)
 
@@ -70,6 +72,7 @@ Dataframe sortiramo po številki stavbe, uri meritve in UNIX času.
 
 
 ```{r Izračun podatkov meritve prejšnjega dne}
+tic()
 vect = vector()
 starTemp = 0
 uraMeritve = 0
@@ -84,11 +87,15 @@ for (row in 1:nrow(sortedDF))
   }
   starTemp = sortedDF[row, "temp_zraka"]
 }
-
+toc()
 ```
 
 ```{r Dodan atribut temperatura prejšnjega dne}
 sortedDF$norm_poraba <- factor(sortedDF$norm_poraba, levels=c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA"))
+sortedDF$ura <- factor(sortedDF$ura)
+sortedDF$oblacnost <- factor(sortedDF$oblacnost)
+sortedDF$teden <- factor(sortedDF$teden)
+sortedDF$mesec <- factor(sortedDF$mesec)
 
 sortedDF$prev_temp <- vect
 head(sortedDF)
@@ -132,6 +139,13 @@ sortedDF$temp_teden <- vect
 head(sortedDF)
 ```
 Z zanko se sprehodimo po vsaki meritvi v matriki in izračunamo povprečje največ zadnjih 7 meritev za isto stavbo ob isti uri. Povprečno temperaturo zapišemo v stolpec z imenom "temp_teden".
+
+## Analiza podatkov
+
+```{r}
+#library(plot3D)
+scatter3D(sortedDF$smer_vetra, sortedDF$hitrost_vetra, sortedDF$temp_zraka, clab = c("Temperatura zraka", "smer_vetra, hitrost_vetra"))
+```
 
 
 
@@ -244,13 +258,17 @@ library(rpart.plot)
 
 
 ```{r Napoved odločitvenih dreves}
+tic("Total")
 i = 1
 predicted <- list()
 for (dt in dt_list) {
+  tic(i)
   tempDF <- filter(sortedDF, mesec == i+1)
   predicted[[i]] <- predict(dt, tempDF, type = "class")
+  toc()
   i = i + 1
 }
+toc()
 ```
 
 ### Analiza odločitvenega drevesa
@@ -535,14 +553,12 @@ for(i in 1:11){
 
 ```{r Izračun matrike napovedi modela K-najbližjih sosedov}
 tic("Total")
-i = 1
 predictedMatKNN <- list()
-for (knn in knn_list) {
+for (i in 1:2) {
   tic(i)
   tempDF <- filter(sortedDF, mesec == i+1)
-  predictedMatKNN[[i]] <- predict(knn, tempDF, type = "prob")
+  predictedMatKNN[[i]] <- predict(knn_list[[i]], tempDF, type = "prob")
   toc()
-  i = i + 1
 }
 col.order <- c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA")
 toc()
@@ -663,8 +679,8 @@ for (rf in rf_list) {
   i = i + 1
 }
 col.order <- c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA")
-head(predictedMatRF[[1]][,col.order])
 toc()
+head(predictedMatRF[[1]][,col.order])
 ```
 
 
@@ -689,6 +705,15 @@ for (i in 1:11) {
 ```
 
 
+## Normaliziranje podatkovnega okvirja
+```{r Normalizacija zveznih podatkov}
+for (i in 1:12) {
+  
+}
+head(sortedDF)
+```
+
+
 ## Umetne nevronske mreže
 
 
@@ -708,7 +733,7 @@ for(m in 1:11) {
 cat("\014")
 ```
 
-```{r Napoved po modelu K-najbližjih sosedov}
+```{r Napoved po Umetni nevronski mreži}
 i = 1
 predictedKNN <- list()
 for (knn in knn_list) {
