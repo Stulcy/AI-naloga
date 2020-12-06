@@ -407,7 +407,9 @@ Preveri se kateri atributi največ pripomorejo pri napovedovanju ciljne spremenl
 tiste, ki imajo najvišjo oceno. Zaradi prevelike količine podatkov se preveri za vsak mesec posebej(npr. zgoraj za januar).
 
 ```{r}
-dataForRegression = subset(dataForRegression, select = -c(vikend, padavine, regija, ura, namembnost, oblacnost))
+dataForRegression = subset(dataForRegression, select = -c(vikend, padavine, ura, namembnost, oblacnost))
+dataForRegression = filter(dataForRegression, regija == "zahodna")
+dataForRegression = subset(dataForRegression, select = -c(regija))
 summary(dataForRegression)
 ```
 
@@ -415,6 +417,9 @@ Množica podatkov se zmanjša na 10 atributov (poleg atributa "poraba"), ki najb
 
 ```{r}
 dataForRegressionAll <- sortedDF
+dataForRegressionAll = filter(dataForRegressionAll, regija == "zahodna")
+dataForRegressionAll = subset(dataForRegressionAll, select = -c(regija))
+summary(dataForRegressionAll)
 ```
 
 Nastavi se še spremenljivka za vse podatke, ki bodo uporabljeni v regresiji.
@@ -1565,6 +1570,8 @@ cat("\014")
 ```
 
 
+
+
 # PRIKAZ PODATKOV REGRESIJE (PRIMERJAVA VSEH PODATKOV Z IZBRANIMI)
 
 ```{r}
@@ -1582,11 +1589,11 @@ podatkiRegresijaLinearnaMae = filter(podatkiRegresijaLinearna, vrsta_napake == "
 podatkiRegresijaLinearnaMaeVsi = filter(podatkiRegresijaLinearnaMae, kolicina_podatkov == "vsi")
 podatkiRegresijaLinearnaMaeIzbrani = filter(podatkiRegresijaLinearnaMae, kolicina_podatkov == "izbrani")
 
-plot(order(podatkiRegresijaLinearnaMaeVsi$mesec), podatkiRegresijaLinearnaMaeVsi$napaka,main="VSI PODATKI - LINEARNA REGRESIJA", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA", type = "h")
-plot(order(podatkiRegresijaLinearnaMaeIzbrani$mesec), podatkiRegresijaLinearnaMaeIzbrani$napaka,main="IZBRANI PODATKI - LINEARNA REGRESIJA", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA", type = "h")
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaLinearnaMaeVsi$napaka,main="VSI PODATKI - LINEARNA REGRESIJA", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaLinearnaMaeIzbrani$napaka,main="IZBRANI PODATKI - LINEARNA REGRESIJA", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
 ```
 
-Številke na X osi prikazujejo mesece za katere smo napovedovali in sicer 1 pomeni februar vse do 11, ki pomeni december. Opazimo, da so napake pri izbranih podatkih večje, kar pomeni, da je na splošno model zgrajen iz vseh danih podatkov boljši od tega iz podatkov, ki največ pripomorejo k oceni atributa "poraba". Napake pa seveda iz meseca v mesec variirajo.
+Številke na X osi prikazujejo mesece za katere smo napovedovali in sicer od februarja do decembra glede na mesec, ki smo ga napovedovali. Opazimo, da so napake pri izbranih podatkih večje, kar pomeni, da je model zgrajen iz vseh danih podatkov boljši od tega iz podatkov, ki največ pripomorejo k oceni atributa "poraba". Napake pa seveda iz meseca v mesec variirajo.
 
 
 ## REGRESIJSKO DREVO
@@ -1597,8 +1604,8 @@ podatkiRegresijaDrevoMae = filter(podatkiRegresijaDrevo, vrsta_napake == "mae")
 podatkiRegresijaDrevoMaeVsi = filter(podatkiRegresijaDrevoMae, kolicina_podatkov == "vsi")
 podatkiRegresijaDrevoMaeIzbrani = filter(podatkiRegresijaDrevoMae, kolicina_podatkov == "izbrani")
 
-plot(order(podatkiRegresijaDrevoMaeVsi$mesec), podatkiRegresijaDrevoMaeVsi$napaka,main="VSI PODATKI - REGRESIJSKO DREVO", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA", type = "h")
-plot(order(podatkiRegresijaDrevoMaeIzbrani$mesec), podatkiRegresijaDrevoMaeIzbrani$napaka,main="IZBRANI PODATKI - REGRESIJSKO DREVO", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA", type = "h")
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaDrevoMaeVsi$napaka,main="VSI PODATKI - REGRESIJSKO DREVO", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaDrevoMaeIzbrani$napaka,main="IZBRANI PODATKI - REGRESIJSKO DREVO", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
 ```
 
 Tako kot pri linearnem modelu tudi tukaj opazimo, da nam model grajen na vseh podatkih vrne boljše rezultate (nižje napake).
@@ -1612,10 +1619,144 @@ podatkiRegresijaGozdMae = filter(podatkiRegresijaGozd, vrsta_napake == "mae")
 podatkiRegresijaGozdMaeVsi = filter(podatkiRegresijaGozdMae, kolicina_podatkov == "vsi")
 podatkiRegresijaGozdMaeIzbrani = filter(podatkiRegresijaGozdMae, kolicina_podatkov == "izbrani")
 
-plot(order(podatkiRegresijaGozdMaeVsi$mesec), podatkiRegresijaGozdMaeVsi$napaka,main="VSI PODATKI - NAKLJUČNI GOZD", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA", type = "h")
-plot(order(podatkiRegresijaGozdMaeIzbrani$mesec), podatkiRegresijaGozdMaeIzbrani$napaka,main="IZBRANI PODATKI - NAKLJUČNI GOZD", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA", type = "h")
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaGozdMaeVsi$napaka,main="VSI PODATKI - NAKLJUČNI GOZD", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaGozdMaeIzbrani$napaka,main="IZBRANI PODATKI - NAKLJUČNI GOZD", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
 ```
 
 Enako kot pri obeh predhodnih modelih tudi naključni gozd za vse podatke vrne boljše rezultate kot za izbrane. Glede na ostala dva modela pa se izkaže za najboljšega izmed uporabljenih treh, saj ima najmanjše absolutne napake.
+
+
+
+
+# PRIKAZ PODATKOV REGRESIJE (PRIMERJAVA VZHODA, ZAHODA IN OBEH HKRATI)
+
+
+```{r}
+podatkiRegresijaVzhod <- read.csv("../../AI-naloga/podatkiRegresijaVzhod.txt", stringsAsFactors=TRUE)
+podatkiRegresijaVzhod
+```
+
+Zgoraj so prikazani podatki za vzhodne stavbe.
+
+```{r}
+podatkiRegresijaZahod <- read.csv("../../AI-naloga/podatkiRegresijaZahod.txt", stringsAsFactors=TRUE)
+podatkiRegresijaZahod
+```
+
+Zgoraj so prikazani podatki za zahodne stavbe.
+
+
+## LINEARNA REGRESIJA
+
+```{r}
+podatkiRegresijaLinearna = filter(podatkiRegresijaVzhod, model == "linearna_regresija")
+podatkiRegresijaLinearnaMae = filter(podatkiRegresijaLinearna, vrsta_napake == "mae")
+podatkiRegresijaLinearnaMaeVsi = filter(podatkiRegresijaLinearnaMae, kolicina_podatkov == "vsi")
+podatkiRegresijaLinearnaMaeIzbrani = filter(podatkiRegresijaLinearnaMae, kolicina_podatkov == "izbrani")
+
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaLinearnaMaeVsi$napaka,main="VSI PODATKI - LINEARNA REGRESIJA - VZHOD", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaLinearnaMaeIzbrani$napaka,main="IZBRANI PODATKI - LINEARNA REGRESIJA - VZHOD", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
+
+
+podatkiRegresijaLinearna = filter(podatkiRegresijaZahod, model == "linearna_regresija")
+podatkiRegresijaLinearnaMae = filter(podatkiRegresijaLinearna, vrsta_napake == "mae")
+podatkiRegresijaLinearnaMaeVsi = filter(podatkiRegresijaLinearnaMae, kolicina_podatkov == "vsi")
+podatkiRegresijaLinearnaMaeIzbrani = filter(podatkiRegresijaLinearnaMae, kolicina_podatkov == "izbrani")
+
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaLinearnaMaeVsi$napaka,main="VSI PODATKI - LINEARNA REGRESIJA - ZAHOD", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaLinearnaMaeIzbrani$napaka,main="IZBRANI PODATKI - LINEARNA REGRESIJA - ZAHOD", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
+
+
+podatkiRegresijaLinearna = filter(podatkiRegresija, model == "linearna_regresija")
+podatkiRegresijaLinearnaMae = filter(podatkiRegresijaLinearna, vrsta_napake == "mae")
+podatkiRegresijaLinearnaMaeVsi = filter(podatkiRegresijaLinearnaMae, kolicina_podatkov == "vsi")
+podatkiRegresijaLinearnaMaeIzbrani = filter(podatkiRegresijaLinearnaMae, kolicina_podatkov == "izbrani")
+
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaLinearnaMaeVsi$napaka,main="VSI PODATKI - LINEARNA REGRESIJA - OBOJE", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaLinearnaMaeIzbrani$napaka,main="IZBRANI PODATKI - LINEARNA REGRESIJA - OBOJE", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
+```
+
+## REGRESIJSKO DREVO
+
+```{r}
+podatkiRegresijaDrevo = filter(podatkiRegresijaVzhod, model == "regresijsko_drevo")
+podatkiRegresijaDrevoMae = filter(podatkiRegresijaDrevo, vrsta_napake == "mae")
+podatkiRegresijaDrevoMaeVsi = filter(podatkiRegresijaDrevoMae, kolicina_podatkov == "vsi")
+podatkiRegresijaDrevoMaeIzbrani = filter(podatkiRegresijaDrevoMae, kolicina_podatkov == "izbrani")
+
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaDrevoMaeVsi$napaka,main="VSI PODATKI - REGRESIJSKO DREVO - VZHOD", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaDrevoMaeIzbrani$napaka,main="IZBRANI PODATKI - REGRESIJSKO DREVO - VZHOD", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
+
+
+podatkiRegresijaDrevo = filter(podatkiRegresijaZahod, model == "regresijsko_drevo")
+podatkiRegresijaDrevoMae = filter(podatkiRegresijaDrevo, vrsta_napake == "mae")
+podatkiRegresijaDrevoMaeVsi = filter(podatkiRegresijaDrevoMae, kolicina_podatkov == "vsi")
+podatkiRegresijaDrevoMaeIzbrani = filter(podatkiRegresijaDrevoMae, kolicina_podatkov == "izbrani")
+
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaDrevoMaeVsi$napaka,main="VSI PODATKI - REGRESIJSKO DREVO - ZAHOD", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaDrevoMaeIzbrani$napaka,main="IZBRANI PODATKI - REGRESIJSKO DREVO - ZAHOD", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
+
+
+podatkiRegresijaDrevo = filter(podatkiRegresija, model == "regresijsko_drevo")
+podatkiRegresijaDrevoMae = filter(podatkiRegresijaDrevo, vrsta_napake == "mae")
+podatkiRegresijaDrevoMaeVsi = filter(podatkiRegresijaDrevoMae, kolicina_podatkov == "vsi")
+podatkiRegresijaDrevoMaeIzbrani = filter(podatkiRegresijaDrevoMae, kolicina_podatkov == "izbrani")
+
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaDrevoMaeVsi$napaka,main="VSI PODATKI - REGRESIJSKO DREVO - OBOJE", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaDrevoMaeIzbrani$napaka,main="IZBRANI PODATKI - REGRESIJSKO DREVO - OBOJE", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
+```
+
+## NAKLJUČNI GOZD
+
+```{r}
+podatkiRegresijaGozd = filter(podatkiRegresijaVzhod, model == "nakljucni_gozd")
+podatkiRegresijaGozdMae = filter(podatkiRegresijaGozd, vrsta_napake == "mae")
+podatkiRegresijaGozdMaeVsi = filter(podatkiRegresijaGozdMae, kolicina_podatkov == "vsi")
+podatkiRegresijaGozdMaeIzbrani = filter(podatkiRegresijaGozdMae, kolicina_podatkov == "izbrani")
+
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaGozdMaeVsi$napaka,main="VSI PODATKI - NAKLJUČNI GOZD - VZHOD", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaGozdMaeIzbrani$napaka,main="IZBRANI PODATKI - NAKLJUČNI GOZD - VZHOD", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
+
+
+podatkiRegresijaGozd = filter(podatkiRegresijaZahod, model == "nakljucni_gozd")
+podatkiRegresijaGozdMae = filter(podatkiRegresijaGozd, vrsta_napake == "mae")
+podatkiRegresijaGozdMaeVsi = filter(podatkiRegresijaGozdMae, kolicina_podatkov == "vsi")
+podatkiRegresijaGozdMaeIzbrani = filter(podatkiRegresijaGozdMae, kolicina_podatkov == "izbrani")
+
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaGozdMaeVsi$napaka,main="VSI PODATKI - NAKLJUČNI GOZD - ZAHOD", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaGozdMaeIzbrani$napaka,main="IZBRANI PODATKI - NAKLJUČNI GOZD - ZAHOD", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
+
+
+podatkiRegresijaGozd = filter(podatkiRegresija, model == "nakljucni_gozd")
+podatkiRegresijaGozdMae = filter(podatkiRegresijaGozd, vrsta_napake == "mae")
+podatkiRegresijaGozdMaeVsi = filter(podatkiRegresijaGozdMae, kolicina_podatkov == "vsi")
+podatkiRegresijaGozdMaeIzbrani = filter(podatkiRegresijaGozdMae, kolicina_podatkov == "izbrani")
+
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaGozdMaeVsi$napaka,main="VSI PODATKI - NAKLJUČNI GOZD - OBOJE", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
+plot(factor(podatkiRegresijaLinearnaMaeVsi$mesec, levels=c("februar", "marec", "april", "maj", "junij", "julij", "avgust", "september", "oktober", "november", "december")), podatkiRegresijaGozdMaeIzbrani$napaka,main="IZBRANI PODATKI - NAKLJUČNI GOZD - OBOJE", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
