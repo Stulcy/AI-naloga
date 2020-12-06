@@ -507,6 +507,28 @@ for(i in 1:11){
 }
 ```
 
+```{r Izbira parametra kInNN za K-najbližjih sosedov}
+knn_list_kInNN <- list()
+tempDF <- filter(sortedDF, mesec <= 1)
+drops <- c("poraba")
+tempDF <- tempDF[ , !(names(tempDF) %in% drops)]
+for(m in 1:25) {
+  knn_list_kInNN[[m]] <- CoreModel(norm_poraba ~ ., data = tempDF, model = "knn", kInNN = m)
+}
+
+
+i = 1
+tempDF <- filter(sortedDF, mesec == 2)
+predictedKNN <- list()
+for (knn in knn_list_kInNN) {
+  predictedMatKInKNN[[i]] <- predict(knn, tempDF, type = "prob")
+  bar <- sum((observedMat[[1]] - predictedMatKInKNN[[i]]) ^ 2) / nrow(predictedMatKInKNN[[i]])
+  cat("Barier's score za k je", i, "je", bar, "\n")
+  i = i + 1
+}
+```
+
+
 ```{r Izračun matrike napovedi modela K-najbližjih sosedov}
 i = 1
 predictedMatKNN <- list()
