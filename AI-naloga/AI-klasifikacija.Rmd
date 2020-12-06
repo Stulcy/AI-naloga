@@ -460,6 +460,7 @@ for (knn in knn_list) {
   tempDF <- filter(sortedDF, mesec == i+1)
   predictedKNN[[i]] <- predict(knn, tempDF, type = "class")
   i = i + 1
+  cat("Mesec", i, "določen.")
 }
 ```
 
@@ -471,7 +472,7 @@ for (knn in knn_list) {
 cat("Pravilnost rezultatov \n")
 for(i in 1:11){
   cat("Mesec =", i+1, " ->  ")
-  q <- filter(sortedDF, mesec == i+1)$norm_poraba == predictedBayes[[i]]
+  q <- filter(sortedDF, mesec == i+1)$norm_poraba == predictedKNN[[i]]
   cat(mean(q))
   #tab <- table(predicted[[i]],filter(sortedDF, mesec == i+1)$norm_poraba)
   cat(" +/-", sd(q)/sqrt(length(q)), "\n")
@@ -481,7 +482,7 @@ for(i in 1:11){
 ```{r Senzitivnost modela K-najbližjih sosedov}
 for(i in 1:11){
   cat("Mesec =", i+1, " ->  ")
-  tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predictedBayes[[i]])
+  tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predictedKNN[[i]])
   cat(tab["SREDNJA", "SREDNJA"]/sum(tab["SREDNJA",]), "\n")
 }
 ```
@@ -491,7 +492,7 @@ for(i in 1:11){
 ```{r Specifičnost modela K-najbližjih sosedov}
 for(i in 1:11){
   cat("Mesec =", i+1, " ->  ")
-  tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predictedBayes[[i]])
+  tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predictedKNN[[i]])
   cat((sum(tab)-sum(tab["SREDNJA",])-sum(tab[,"SREDNJA"])+tab["SREDNJA","SREDNJA"])/(sum(tab)-sum(tab[,"SREDNJA"])), "\n")
 }
 ```
@@ -501,21 +502,21 @@ for(i in 1:11){
 #cat("Preciznost za 'SREDNJA'\n")
 for(i in 1:11){
   cat("Mesec =", i+1, " ->  ")
-  tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predictedBayes[[i]])
+  tab <- table(filter(sortedDF, mesec == i+1)$norm_poraba, predictedKNN[[i]])
   cat(tab["SREDNJA", "SREDNJA"]/sum(tab[,"SREDNJA"]), "\n")
 }
 ```
 
 ```{r Izračun matrike napovedi modela K-najbližjih sosedov}
 i = 1
-predictedMat <- list()
-for (nb in nb_list) {
+predictedMatKNN <- list()
+for (knn in knn_list) {
   tempDF <- filter(sortedDF, mesec == i+1)
-  predictedMat[[i]] <- predict(nb, tempDF, type = "raw")
+  predictedMatKNN[[i]] <- predict(knn, tempDF, type = "prob")
   i = i + 1
 }
 col.order <- c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA")
-head(predictedMat[[1]][,col.order])
+head(predictedMatKNN[[1]][,col.order])
 ```
 
 
@@ -524,7 +525,7 @@ head(predictedMat[[1]][,col.order])
 print("Barier's test", quote = F)
 for(i in 1:11){
   cat("Mesec =", i+1, " ->  ")
-  bar <- sum((observedMat[[i]] - predictedMat[[i]]) ^ 2) / nrow(predictedMat[[i]])
+  bar <- sum((observedMat[[i]] - predictedMatKNN[[i]]) ^ 2) / nrow(predictedMatKNN[[i]])
   cat(bar, "\n")
 }
 ```
@@ -535,7 +536,7 @@ for(i in 1:11){
 cat("Informacijska vsebina odgovora\n")
 for (i in 1:11) {
   cat("Mesec =", i+1, " ->  ")
-  cat(inf.score(filter(sortedDF, mesec <= i)$norm_poraba, filter(sortedDF, mesec == i+1)$norm_poraba, predictedMat[[i]]), "\n")
+  cat(inf.score(filter(sortedDF, mesec <= i)$norm_poraba, filter(sortedDF, mesec == i+1)$norm_poraba, predictedMatKNN[[i]]), "\n")
 }
 ```
 
