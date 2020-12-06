@@ -468,7 +468,7 @@ observed <- testAll$poraba
 podatki[[1]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -482,7 +482,7 @@ observed <- test$poraba
 podatki[[2]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -571,7 +571,7 @@ observed <- testAll$poraba
 podatki[[7]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -585,7 +585,7 @@ observed <- test$poraba
 podatki[[8]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -674,7 +674,7 @@ observed <- testAll$poraba
 podatki[[13]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -688,7 +688,7 @@ observed <- test$poraba
 podatki[[14]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -778,7 +778,7 @@ observed <- testAll$poraba
 podatki[[19]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -792,7 +792,7 @@ observed <- test$poraba
 podatki[[20]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -881,7 +881,7 @@ observed <- testAll$poraba
 podatki[[25]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -895,7 +895,7 @@ observed <- test$poraba
 podatki[[26]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -985,7 +985,7 @@ observed <- testAll$poraba
 podatki[[31]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -999,7 +999,7 @@ observed <- test$poraba
 podatki[[32]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -1088,7 +1088,7 @@ observed <- testAll$poraba
 podatki[[37]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -1102,7 +1102,7 @@ observed <- test$poraba
 podatki[[38]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -1191,7 +1191,7 @@ observed <- testAll$poraba
 podatki[[43]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -1205,7 +1205,7 @@ observed <- test$poraba
 podatki[[44]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -1294,7 +1294,7 @@ observed <- testAll$poraba
 podatki[[49]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -1308,7 +1308,7 @@ observed <- test$poraba
 podatki[[50]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -1397,7 +1397,7 @@ observed <- testAll$poraba
 podatki[[55]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -1411,7 +1411,7 @@ observed <- test$poraba
 podatki[[56]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -1500,7 +1500,7 @@ observed <- testAll$poraba
 podatki[[61]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(trainAll$poraba)), rmse(observed, predicted, mean(trainAll$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -1514,7 +1514,7 @@ observed <- test$poraba
 podatki[[62]] <- c(mae(observed, predicted), sqrt(mse(observed, predicted)), rmae(observed, predicted, mean(train$poraba)), rmse(observed, predicted, mean(train$poraba)))
 cat("\014")
 
-plot(observed)
+plot(observed, xlab="", ylab="", main="GRAFIČNI PRIKAZ OPAZOVANIH IN PREDVIDENIH PODATKOV", sub="Črne točke so opazovane, rdeče pa predvidene.")
 points(predicted, col="red")
 ```
 
@@ -1565,12 +1565,18 @@ cat("\014")
 ```
 
 
-# PRIKAZ PODATKOV REGRESIJE
+# PRIKAZ PODATKOV REGRESIJE (PRIMERJAVA VSEH PODATKOV Z IZBRANIMI)
+
+```{r}
+podatkiRegresija <- read.csv("../../AI-naloga/podatkiRegresija.txt", stringsAsFactors=TRUE)
+podatkiRegresija
+```
+
+Zgoraj so prikazani vsi zbrani podatki za vse mesece, napake mae,mse,rmae in rmse in vse uporabljene modele.
 
 ## LINEARNA REGRESIJA
 
 ```{r}
-podatkiRegresija <- read.csv("../../AI-naloga/podatkiRegresija.txt", stringsAsFactors=TRUE)
 podatkiRegresijaLinearna = filter(podatkiRegresija, model == "linearna_regresija")
 podatkiRegresijaLinearnaMae = filter(podatkiRegresijaLinearna, vrsta_napake == "mae")
 podatkiRegresijaLinearnaMaeVsi = filter(podatkiRegresijaLinearnaMae, kolicina_podatkov == "vsi")
@@ -1579,4 +1585,37 @@ podatkiRegresijaLinearnaMaeIzbrani = filter(podatkiRegresijaLinearnaMae, kolicin
 plot(order(podatkiRegresijaLinearnaMaeVsi$mesec), podatkiRegresijaLinearnaMaeVsi$napaka,main="VSI PODATKI - LINEARNA REGRESIJA", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA", type = "h")
 plot(order(podatkiRegresijaLinearnaMaeIzbrani$mesec), podatkiRegresijaLinearnaMaeIzbrani$napaka,main="IZBRANI PODATKI - LINEARNA REGRESIJA", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA", type = "h")
 ```
+
+Številke na X osi prikazujejo mesece za katere smo napovedovali in sicer 1 pomeni februar vse do 11, ki pomeni december. Opazimo, da so napake pri izbranih podatkih večje, kar pomeni, da je na splošno model zgrajen iz vseh danih podatkov boljši od tega iz podatkov, ki največ pripomorejo k oceni atributa "poraba". Napake pa seveda iz meseca v mesec variirajo.
+
+
+## REGRESIJSKO DREVO
+
+```{r}
+podatkiRegresijaDrevo = filter(podatkiRegresija, model == "regresijsko_drevo")
+podatkiRegresijaDrevoMae = filter(podatkiRegresijaDrevo, vrsta_napake == "mae")
+podatkiRegresijaDrevoMaeVsi = filter(podatkiRegresijaDrevoMae, kolicina_podatkov == "vsi")
+podatkiRegresijaDrevoMaeIzbrani = filter(podatkiRegresijaDrevoMae, kolicina_podatkov == "izbrani")
+
+plot(order(podatkiRegresijaDrevoMaeVsi$mesec), podatkiRegresijaDrevoMaeVsi$napaka,main="VSI PODATKI - REGRESIJSKO DREVO", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA", type = "h")
+plot(order(podatkiRegresijaDrevoMaeIzbrani$mesec), podatkiRegresijaDrevoMaeIzbrani$napaka,main="IZBRANI PODATKI - REGRESIJSKO DREVO", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA", type = "h")
+```
+
+Tako kot pri linearnem modelu tudi tukaj opazimo, da nam model grajen na vseh podatkih vrne boljše rezultate (nižje napake).
+
+
+## NAKLJUČNI GOZD
+
+```{r}
+podatkiRegresijaGozd = filter(podatkiRegresija, model == "nakljucni_gozd")
+podatkiRegresijaGozdMae = filter(podatkiRegresijaGozd, vrsta_napake == "mae")
+podatkiRegresijaGozdMaeVsi = filter(podatkiRegresijaGozdMae, kolicina_podatkov == "vsi")
+podatkiRegresijaGozdMaeIzbrani = filter(podatkiRegresijaGozdMae, kolicina_podatkov == "izbrani")
+
+plot(order(podatkiRegresijaGozdMaeVsi$mesec), podatkiRegresijaGozdMaeVsi$napaka,main="VSI PODATKI - NAKLJUČNI GOZD", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA", type = "h")
+plot(order(podatkiRegresijaGozdMaeIzbrani$mesec), podatkiRegresijaGozdMaeIzbrani$napaka,main="IZBRANI PODATKI - NAKLJUČNI GOZD", xlab="MESECI", ylab="SREDNJA ABSOLUTNA NAPAKA", type = "h")
+```
+
+Enako kot pri obeh predhodnih modelih tudi naključni gozd za vse podatke vrne boljše rezultate kot za izbrane. Glede na ostala dva modela pa se izkaže za najboljšega izmed uporabljenih treh, saj ima najmanjše absolutne napake.
+
 
