@@ -17,6 +17,7 @@ data <- dataSem1
 data$regija <- as.factor(data$regija)
 data$namembnost <- as.factor(data$namembnost)
 data$norm_poraba <- as.factor(data$norm_poraba)
+data$stavba <- as.factor(data$stavba)
 
 head(data)
 ```
@@ -140,7 +141,7 @@ Z zanko se sprehodimo po vsaki meritvi v matriki in izračunamo povprečje najve
 
 ## Analiza podatkov
 
-```{r}
+```{r Grafi analize}
 library("plot3D")
 library(dplyr)
 usefull_data <- filter(sortedDF, smer_vetra > 0)
@@ -351,6 +352,8 @@ for (i in 1:11) {
 ## Naivni Bayesov klasifikator
 
 ```{r Parallel libraries}
+library(iterators)
+library(parallel)
 library(foreach)
 library(doParallel)
 numCores <- detectCores()
@@ -630,10 +633,6 @@ toc()
 rf_list2
 ```
 
-```{r}
-rf_list
-```
-
 
 ```{r Napoved po Naključnem gozdu}
 tic("Total")
@@ -646,7 +645,7 @@ toc()
 ```
 
 
-### Analiza Naključnega drevesa
+### Analiza Naključnega gozda
 
 ```{r Pravilnost rezultatov Naključnega gozda}
 # Tabela zmot
@@ -726,8 +725,292 @@ for (i in 1:11) {
 
 ## Ocena kvalitete artibutov
 
+```{r Izračun bitov posameznega atributa}
+tempDF <- sortedDF
+drops <- c("poraba")
+tempDF <- tempDF[ , !(names(tempDF) %in% drops)]
+tempDF$stavba <- as.factor(tempDF$stavba)
+sort(attrEval(norm_poraba ~ ., data = tempDF, "InfGain"), decreasing = T)
+``` 
+
+```{r Potrebna vrednost atributov za klasifikacijo}
+o0 <- table(tempDF$norm_poraba)/length(tempDF$norm_poraba)
+-sum(o0*log2(o0))
+```
 
 
+
+```{r Izračun MDL}
+tic()
+sort(attrEval(norm_poraba ~ ., data = tempDF, "MDL"), decreasing = T)
+toc()
+``` 
+
+```{r Izris}
+plot(tempDF, col=tempDF$norm_poraba)
+``` 
+
+
+```{r}
+drops <- c("datum", "UNIX", "hitrost_vetra", "padavine", "smer_vetra", "oblacnost", "pritisk")
+sortedDF_reduced <- tempDF[ , !(names(tempDF) %in% drops)]
+```
+
+```{r}
+names(sortedDF_reduced)
+
+max_vals <- apply(sortedDF_reduced[,c(5,6,7,8,10,13,14)], 2, max)
+min_vals <- apply(sortedDF_reduced[,c(5,6,7,8,10,13,14)], 2, min)
+
+sortedDF_scaled <- scale(sortedDF_reduced[,c(5,6,7,8,10,13,14)], center = min_vals, scale = max_vals - min_vals)
+sortedDF_scaled <- data.frame(sortedDF_scaled)
+sortedDF_scaled$ura <- sortedDF_reduced$ura
+sortedDF_scaled$regija <- sortedDF_reduced$regija
+sortedDF_scaled$stavba <- sortedDF_reduced$stavba
+sortedDF_scaled$namembnost <- sortedDF_reduced$namembnost
+sortedDF_scaled$norm_poraba <- sortedDF_reduced$norm_poraba
+sortedDF_scaled$vikend <- sortedDF_reduced$vikend
+sortedDF_scaled$mesec <- sortedDF_reduced$mesec
+
+summary(sortedDF_scaled)
+```
+
+
+## Odločitvena drevesa na izbranih atributih
+
+```{r Izračun odločitvenih dreves na izbranih atributih}
+library(rpart)
+
+dt_list <- list()
+tic()
+for(m in 1:11) {
+  tempDF <- filter(sortedDF_reduced, mesec <= m)
+  
+  drops <- c("poraba")
+  tempDF <- tempDF[ , !(names(tempDF) %in% drops)]
+  dt_list[[m]] <- rpart(norm_poraba ~ ., data = tempDF, cp = 0)
+  tab <- printcp(dt_list[[m]])
+  row <- which.min(tab[,"xerror"])
+  th <- mean(c(tab[row, "CP"], tab[row-1, "CP"]))
+  dt_list[[m]] <- prune(dt_list[[m]], cp = th)
+}
+
+cat("\014")
+toc()
+rm(tab)
+rm(row)
+rm(th)
+```
+
+```{r Napoved odločitvenih dreves na izbranih atributih}
+tic("Total")
+
+predicted <- list()
+for (i in 1:11) {
+  tic(i)
+  tempDF <- filter(sortedDF_reduced, mesec == i+1)
+  predicted[[i]] <- predict(dt_list[[i]], tempDF, type = "class")
+  toc()
+}
+toc()
+```
+
+### Analiza odločitvenega drevesa
+```{r Pravilnost rezultatov odločitvenih dreves na izbranih atributih}
+# Tabela zmot
+cat("Pravilnost rezultatov \n")
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  q <- filter(sortedDF_reduced, mesec == i+1)$norm_poraba == predicted[[i]]
+  cat(mean(q))
+  #tab <- table(predicted[[i]],filter(sortedDF, mesec == i+1)$norm_poraba)
+  cat(" +/-", sd(q)/sqrt(length(q)), "\n")
+}
+```
+
+
+```{r Senzitivnost odločitvenih dreves na izbranih atributih}
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  tab <- table(filter(sortedDF_reduced, mesec == i+1)$norm_poraba, predicted[[i]])
+  cat(tab["SREDNJA", "SREDNJA"]/sum(tab["SREDNJA",]), "\n")
+}
+```
+
+
+```{r Specifičnost odločitvenih dreves na izbranih atributih}
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  tab <- table(filter(sortedDF_reduced, mesec == i+1)$norm_poraba, predicted[[i]])
+  cat((sum(tab)-sum(tab["SREDNJA",])-sum(tab[,"SREDNJA"])+tab["SREDNJA","SREDNJA"])/(sum(tab)-sum(tab[,"SREDNJA"])), "\n")
+}
+```
+
+
+```{r Preciznost odločitvenih dreves na izbranih atributih}
+#cat("Preciznost za 'SREDNJA'\n")
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  tab <- table(filter(sortedDF_reduced, mesec == i+1)$norm_poraba, predicted[[i]])
+  cat(tab["SREDNJA", "SREDNJA"]/sum(tab[,"SREDNJA"]), "\n")
+}
+```
+
+
+```{r Izračun matrike napovedi odločitvenih dreves na izbranih atributih}
+i = 1
+predictedMat <- list()
+for (dt in dt_list) {
+  tempDF <- filter(sortedDF_reduced, mesec == i+1)
+  predictedMat[[i]] <- predict(dt, tempDF, type = "prob")
+  i = i + 1
+}
+col.order <- c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA")
+head(predictedMat[[1]][,col.order])
+```
+
+
+```{r Barierjev test odločitvenih dreves na izbranih atributih}
+print("Barier's test", quote = F)
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  bar <- sum((observedMat[[i]] - predictedMat[[i]]) ^ 2) / nrow(predictedMat[[i]])
+  cat(bar, "\n")
+}
+```
+
+
+```{r Izračun informacijske vsebine odločitvenih dreves na izbranih atributih}
+cat("Informacijska vsebina odgovora\n")
+for (i in 1:11) {
+  cat("Mesec =", i+1, " ->  ")
+  cat(inf.score(filter(sortedDF_reduced, mesec <= i)$norm_poraba, filter(sortedDF_reduced, mesec == i+1)$norm_poraba, predictedMat[[i]]), "\n")
+}
+```
+
+
+
+## Naključni gozd na izbranih atributih
+
+```{r Izračun Naključnih gozdov na izbranih atributih}
+library(randomForest)
+tic("Total")
+rm(tempDF)
+rf_list <- list()
+rf_list <- foreach (m=1:11) %dopar% {
+  tempDF <- filter(sortedDF_reduced, mesec <= m)
+  drops <- c("poraba")
+  tempDF <- tempDF[ , !(names(tempDF) %in% drops)]
+  rf_list[[m]] <- randomForest(norm_poraba ~ ., data = tempDF)
+}
+toc()
+```
+
+
+```{r Dopolnilo Naključnih gozdov na izbranih atributih}
+library(randomForest)
+tic("Total")
+
+rf_list2 <- list()
+rf_list2 <- foreach (m=1) %do% {
+  tempDF <- filter(sortedDF_reduced, mesec <= m)
+  drops <- c("poraba")
+  tempDF <- tempDF[ , !(names(tempDF) %in% drops)]
+  rf_list2[m] <- randomForest(norm_poraba ~ ., data = tempDF)
+}
+toc()
+
+rf_list2
+```
+
+
+```{r Napoved po Naključnem gozdu na izbranih atributih}
+tic("Total")
+predictedRF <- list()
+predictedRF <- foreach (i=1:11) %dopar% {
+  tempDF <- filter(sortedDF_reduced, mesec == i+1)
+  predictedRF[[i]] <- predict(rf_list[[i]], tempDF, type = "class")
+}
+toc()
+```
+
+
+### Analiza Naključnega gozda
+
+```{r Pravilnost rezultatov Naključnega gozda na izbranih atributih}
+# Tabela zmot
+cat("Pravilnost rezultatov \n")
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  q <- filter(sortedDF_reduced, mesec == i+1)$norm_poraba == predictedRF[[i]]
+  cat(mean(q))
+  #tab <- table(predicted[[i]],filter(sortedDF_reduced, mesec == i+1)$norm_poraba)
+  cat(" +/-", sd(q)/sqrt(length(q)), "\n")
+}
+```
+
+```{r Senzitivnost Naključnega gozda na izbranih atributih}
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  tab <- table(filter(sortedDF_reduced, mesec == i+1)$norm_poraba, predictedRF[[i]])
+  cat(tab["SREDNJA", "SREDNJA"]/sum(tab["SREDNJA",]), "\n")
+}
+```
+
+
+
+```{r Specifičnost Naključnega gozda na izbranih atributih}
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  tab <- table(filter(sortedDF_reduced, mesec == i+1)$norm_poraba, predictedRF[[i]])
+  cat((sum(tab)-sum(tab["SREDNJA",])-sum(tab[,"SREDNJA"])+tab["SREDNJA","SREDNJA"])/(sum(tab)-sum(tab[,"SREDNJA"])), "\n")
+}
+```
+
+
+```{r Preciznost Naključnega gozda na izbranih atributih}
+#cat("Preciznost za 'SREDNJA'\n")
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  tab <- table(filter(sortedDF_reduced, mesec == i+1)$norm_poraba, predictedRF[[i]])
+  cat(tab["SREDNJA", "SREDNJA"]/sum(tab[,"SREDNJA"]), "\n")
+}
+```
+
+
+
+```{r Izračun matrike napovedi Naključnega gozda na izbranih atributih}
+tic("Total")
+predictedMatRF <- list()
+predictedMatRF <- foreach (i=1:11) %dopar% {
+  tempDF <- filter(sortedDF, mesec == i+1)
+  predictedMatRF[[i]] <- predict(rf_list[[i]], tempDF, type = "prob")
+}
+col.order <- c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA")
+toc()
+head(predictedMatRF[[1]][,col.order])
+```
+
+
+
+```{r Barierjev test Naključnega gozda na izbranih atributih}
+print("Barier's test", quote = F)
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  bar <- sum((observedMat[[i]] - predictedMatRF[[i]]) ^ 2) / nrow(predictedMatRF[[i]])
+  cat(bar, "\n")
+}
+```
+
+
+
+```{r Izračun informacijske vsebine Naključnega gozda na izbranih atributih}
+cat("Informacijska vsebina odgovora\n")
+for (i in 1:11) {
+  cat("Mesec =", i+1, " ->  ")
+  cat(inf.score(filter(sortedDF_reduced, mesec <= i)$norm_poraba, filter(sortedDF_reduced, mesec == i+1)$norm_poraba, predictedMatRF[[i]]), "\n")
+}
+```
 
 
 ## Normaliziranje podatkovnega okvirja
@@ -735,40 +1018,50 @@ for (i in 1:11) {
 for (i in 1:12) {
   
 }
-head(sortedDF)
+summary(sortedDF_reduced)
+
+names(sortedDF_reduced)
 ```
 
 
 ## Umetne nevronske mreže
 
-
 ```{r Izračun Nevronske mreže}
 library(nnet)
+tic("Total")
 set.seed(0)
 nn_list <- list()
 
-for(m in 1:11) {
-  tempDF <- filter(sortedDF, mesec <= m)
-  
-  drops <- c("poraba")
-  tempDF <- tempDF[ , !(names(tempDF) %in% drops)]
+nn_list <- foreach (m=1:11) %do% {
+  tempDF <- filter(sortedDF_reduced, mesec <= m)
   nn_list[[m]] <- nnet(norm_poraba ~ ., data = tempDF, size = 5, decay = 0.0001, maxit = 10000)
 }
-
+toc()
 cat("\014")
 ```
 
+
 ```{r Napoved po Umetni nevronski mreži}
-i = 1
-predictedKNN <- list()
-for (knn in knn_list) {
-  tempDF <- filter(sortedDF, mesec == i+1)
-  predictedKNN[[i]] <- predict(knn, tempDF, type = "class")
-  i = i + 1
-  cat("Mesec", i, "določen.")
+tic("Total")
+predictedNN <- list()
+predictedNN <- foreach (i=1:11) %dopar% {
+  tempDF <- filter(sortedDF_reduced, mesec == i+1)
+  predictedNN[[i]] <- predict(nn_list[[i]], tempDF, type = "class")
 }
+toc()
 ```
 
+### Analiza umetne nevronske mreže
+
+```{r Pravilnost rezultatov umetne nevronske mreže}
+cat("Pravilnost rezultatov \n")
+for(i in 1:11){
+  cat("Mesec =", i+1, " ->  ")
+  q <- filter(sortedDF_reduced, mesec == i+1)$norm_poraba == predictedNN[[i]]
+  cat(mean(q))
+  cat(" +/-", sd(q)/sqrt(length(q)), "\n")
+}
+```
 
 ## Testni chunk
 
