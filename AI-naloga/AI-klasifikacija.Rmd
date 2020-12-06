@@ -24,8 +24,6 @@ Atribute "regija", "namembnost" in "norm_poraba" faktoriziramo, da programski je
 
 ```{r Določitev tipa atributa "datum"}
 library(tictoc)
-library(foreach)
-library(doParallel)
 data$datum <- as.Date(data$datum)
 head(data)
 
@@ -94,8 +92,6 @@ toc()
 sortedDF$norm_poraba <- factor(sortedDF$norm_poraba, levels=c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA"))
 sortedDF$ura <- factor(sortedDF$ura)
 sortedDF$oblacnost <- factor(sortedDF$oblacnost)
-sortedDF$teden <- factor(sortedDF$teden)
-sortedDF$mesec <- factor(sortedDF$mesec)
 
 sortedDF$prev_temp <- vect
 head(sortedDF)
@@ -105,6 +101,7 @@ S kodo zgornjih dveh odlomkov vsaki meritvi v sortirani matriki poiščemo merit
 
 
 ```{r Izračun temperature prejšnjih 7 dni}
+tic()
 vect = vector()
 starTemp = 0
 uraMeritve = 0
@@ -132,6 +129,7 @@ for (row in 1:nrow(sortedDF))
   }
   starTemp = sortedDF[row, "temp_zraka"]
 }
+toc()
 ```
 
 ```{r Dodan atribut temperatura prejšnjih 7 dni}
@@ -143,8 +141,11 @@ Z zanko se sprehodimo po vsaki meritvi v matriki in izračunamo povprečje najve
 ## Analiza podatkov
 
 ```{r}
-#library(plot3D)
-scatter3D(sortedDF$smer_vetra, sortedDF$hitrost_vetra, sortedDF$temp_zraka, clab = c("Temperatura zraka", "smer_vetra, hitrost_vetra"))
+library("plot3D")
+library(dplyr)
+usefull_data <- filter(sortedDF, smer_vetra > 0)
+scatter2D(usefull_data$smer_vetra, usefull_data$temp_zraka, clab = c("Temperatura zraka", "smer_vetra, hitrost_vetra"))
+scatter3D(usefull_data$smer_vetra, usefull_data$hitrost_vetra, usefull_data$temp_zraka, phi = 10, theta = 20, bty ="g", ticktype = "detailed")
 ```
 
 
@@ -164,7 +165,7 @@ Večinski parameter je vrednost "SREDNJA", ki predstavlja 76.435 vrednosti od 20
 
 ```{r Matrika dejanskih vrednosti nominirane temperature}
 library(nnet)
-library(dplyr)
+
 observedMat <- list()
 for (i in 1:11) {
   observedMat[[i]] <- class.ind(factor(filter(sortedDF, mesec == i+1)$norm_poraba, levels=c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA")))
@@ -226,7 +227,7 @@ for (i in 1:11) {
 library(rpart)
 
 dt_list <- list()
-
+tic()
 for(m in 1:11) {
   tempDF <- filter(sortedDF, mesec <= m)
   
@@ -240,6 +241,7 @@ for(m in 1:11) {
 }
 
 cat("\014")
+toc()
 rm(tab)
 rm(row)
 rm(th)
@@ -259,14 +261,13 @@ library(rpart.plot)
 
 ```{r Napoved odločitvenih dreves}
 tic("Total")
-i = 1
+
 predicted <- list()
-for (dt in dt_list) {
+for (i in 1:11) {
   tic(i)
   tempDF <- filter(sortedDF, mesec == i+1)
-  predicted[[i]] <- predict(dt, tempDF, type = "class")
+  predicted[[i]] <- predict(dt_list[[i]], tempDF, type = "class")
   toc()
-  i = i + 1
 }
 toc()
 ```
@@ -349,11 +350,20 @@ for (i in 1:11) {
 
 ## Naivni Bayesov klasifikator
 
+```{r Parallel libraries}
+library(foreach)
+library(doParallel)
+numCores <- detectCores()
+numCores
+registerDoParallel(cores = numCores)
+```
+
+
 ```{r Izračun modelov Naivni Bayes}
 library(e1071)
 
 nb_list <- list()
-
+tic()
 for(m in 1:11) {
   tempDF <- filter(sortedDF, mesec <= m)
   
@@ -361,18 +371,20 @@ for(m in 1:11) {
   tempDF <- tempDF[ , !(names(tempDF) %in% drops)]
   nb_list[[m]] <- naiveBayes(norm_poraba ~ ., data = tempDF)
 }
-
+toc()
 ```
 
 
-```{r Napoved po naivnem Bayesu}
-i = 1
+```{r Napoved po naivnem Bayesu paralelizirana}
+tempDF <- list()
+tic()
 predictedBayes <- list()
-for (nb in nb_list) {
-  tempDF <- filter(sortedDF, mesec == i+1)
-  predictedBayes[[i]] <- predict(nb, tempDF, type = "class")
-  i = i + 1
+predictedBayes <- foreach (i=1:11) %dopar% {
+  tempDF[[i]] <- filter(sortedDF, mesec == i+1)
+  predictedBayes[[i]] <- predict(nb_list[[i]], tempDF[[i]], type = "class")
 }
+cat("\014")
+toc()
 ```
 
 
@@ -419,17 +431,17 @@ for(i in 1:11){
 ```
 
 ```{r Izračun matrike napovedi Naivnega Bayesa}
-i = 1
+tic()
+tempDF <- list()
 predictedMat <- list()
-for (nb in nb_list) {
-  tempDF <- filter(sortedDF, mesec == i+1)
-  predictedMat[[i]] <- predict(nb, tempDF, type = "raw")
-  i = i + 1
+predictedMat <- foreach (i=1:11) %dopar% {
+  tempDF[[i]] <- filter(sortedDF, mesec == i+1)
+  predictedMat[[i]] <- predict(nb_list[[i]], tempDF[[i]], type = "raw")
 }
 col.order <- c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA")
+toc()
 head(predictedMat[[1]][,col.order])
 ```
-
 
 
 ```{r Barierjev test Naivnega Bayesa}
@@ -456,6 +468,8 @@ for (i in 1:11) {
 ## K-najbližjih sosedov
 
 ```{r Izbira parametra kInNN za K-najbližjih sosedov}
+library(CORElearn)
+tic("Creating 20 models")
 knn_list_kInNN <- list()
 tempDF <- filter(sortedDF, mesec <= 1)
 drops <- c("poraba")
@@ -464,25 +478,26 @@ for(m in 1:20) {
   knn_list_kInNN[[m]] <- CoreModel(norm_poraba ~ ., data = tempDF, model = "knn", kInNN = m)
 }
 cat("\014")
+toc()
 
 i = 1
 tempDF <- filter(sortedDF, mesec == 2)
 predictedMatKInKNN <- list()
+tic("Predicting on 20 models")
 for (knn in knn_list_kInNN) {
   predictedMatKInKNN[[i]] <- predict(knn, tempDF, type = "prob")
   bar <- sum((observedMat[[1]] - predictedMatKInKNN[[i]]) ^ 2) / nrow(predictedMatKInKNN[[i]])
   cat("Barier's score za k =", i, "je", bar, "\n")
   i = i + 1
 }
+toc()
 ```
 
 
 
 ```{r Izračun modela K-najbližjih sosedov}
-library(CORElearn)
-
 knn_list <- list()
-
+tic("Total")
 for(m in 1:11) {
   tempDF <- filter(sortedDF, mesec <= m)
   
@@ -490,20 +505,21 @@ for(m in 1:11) {
   tempDF <- tempDF[ , !(names(tempDF) %in% drops)]
   knn_list[[m]] <- CoreModel(norm_poraba ~ ., data = tempDF, model = "knn", kInNN = 5)
 }
-
 cat("\014")
+toc()
 ```
 
 
 ```{r Napoved po modelu K-najbližjih sosedov}
-i = 1
+tic("Total")
 predictedKNN <- list()
-for (knn in knn_list) {
+predictedKNN <- foreach (i=1:11) %dopar% {
+  tic(i)
   tempDF <- filter(sortedDF, mesec == i+1)
-  predictedKNN[[i]] <- predict(knn, tempDF, type = "class")
-  i = i + 1
-  cat("Mesec", i, "določen.")
+  predictedKNN[[i]] <- predict(knn_list[[i]], tempDF, type = "class")
+  toc()
 }
+toc()
 ```
 
 
@@ -554,7 +570,7 @@ for(i in 1:11){
 ```{r Izračun matrike napovedi modela K-najbližjih sosedov}
 tic("Total")
 predictedMatKNN <- list()
-for (i in 1:2) {
+predictedMatKNN <- foreach (i=1:11) %dopar% {
   tic(i)
   tempDF <- filter(sortedDF, mesec == i+1)
   predictedMatKNN[[i]] <- predict(knn_list[[i]], tempDF, type = "prob")
@@ -594,14 +610,15 @@ library(randomForest)
 tic("total")
 
 rf_list <- list()
-
-for(m in 1:11) {
+rm(tempDF)
+rf_list <- foreach (m=1:11) %dopar% {
   tic(m)
   tempDF <- filter(sortedDF, mesec <= m)
   
   drops <- c("poraba")
   tempDF <- tempDF[ , !(names(tempDF) %in% drops)]
   rf_list[[m]] <- randomForest(norm_poraba ~ ., data = tempDF)
+  rm(tempDF)
   toc()
 }
 toc()
@@ -610,13 +627,11 @@ toc()
 
 ```{r Napoved po Naključnem gozdu}
 tic("Total")
-i = 1
 predictedRF <- list()
-for (rf in rf_list) {
+predictedRF <- foreach (i=1:11) %dopar% {
   tic(i)
   tempDF <- filter(sortedDF, mesec == i+1)
-  predictedRF[[i]] <- predict(rf, tempDF, type = "class")
-  i = i + 1
+  predictedRF[[i]] <- predict(rf_list[[i]], tempDF, type = "class")
   toc()
 }
 toc()
@@ -669,14 +684,12 @@ for(i in 1:11){
 
 ```{r Izračun matrike napovedi Naključnega gozda}
 tic("Total")
-i = 1
 predictedMatRF <- list()
-for (rf in rf_list) {
+predictedMatRF <- foreach (i=1:11) %dopar% {
   tic(i)
   tempDF <- filter(sortedDF, mesec == i+1)
-  predictedMatRF[[i]] <- predict(rf, tempDF, type = "prob")
+  predictedMatRF[[i]] <- predict(rf_list[[i]], tempDF, type = "prob")
   toc()
-  i = i + 1
 }
 col.order <- c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA")
 toc()
