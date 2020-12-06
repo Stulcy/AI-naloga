@@ -17,7 +17,6 @@ data <- dataSem1
 data$regija <- as.factor(data$regija)
 data$namembnost <- as.factor(data$namembnost)
 data$norm_poraba <- as.factor(data$norm_poraba)
-data$stavba <- as.factor(data$stavba)
 
 head(data)
 ```
@@ -91,8 +90,8 @@ toc()
 
 ```{r Dodan atribut temperatura prejšnjega dne}
 sortedDF$norm_poraba <- factor(sortedDF$norm_poraba, levels=c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA"))
-#sortedDF$ura <- factor(sortedDF$ura)
-#sortedDF$oblacnost <- factor(sortedDF$oblacnost)
+sortedDF$ura <- factor(sortedDF$ura)
+sortedDF$oblacnost <- factor(sortedDF$oblacnost)
 
 sortedDF$prev_temp <- vect
 head(sortedDF)
@@ -438,7 +437,8 @@ for(i in 1:11){
 tic()
 tempDF <- list()
 predictedMat <- list()
-predictedMat <- foreach (i=1:11) %dopar% {
+for (i in 1:11) {
+  ti
   tempDF[[i]] <- filter(sortedDF, mesec == i+1)
   predictedMat[[i]] <- predict(nb_list[[i]], tempDF[[i]], type = "raw")
 }
@@ -515,7 +515,7 @@ toc()
 ```{r Napoved po modelu K-najbližjih sosedov}
 tic("Total")
 predictedKNN <- list()
-predictedKNN <- foreach (i=1:11) %dopar% {
+for (i in 1:11) {
   tempDF <- filter(sortedDF, mesec == i+1)
   predictedKNN[[i]] <- predict(knn_list[[i]], tempDF, type = "class")
 }
@@ -570,7 +570,7 @@ for(i in 1:11){
 ```{r Izračun matrike napovedi modela K-najbližjih sosedov}
 tic("Total")
 predictedMatKNN <- list()
-predictedMatKNN <- foreach (i=1:11) %dopar% {
+for (i in 1:11) {
   tempDF <- filter(sortedDF, mesec == i+1)
   predictedMatKNN[[i]] <- predict(knn_list[[i]], tempDF, type = "prob")
 }
@@ -605,42 +605,29 @@ for (i in 1:11) {
 
 ```{r Izračun Naključnih gozdov}
 library(randomForest)
+library(tictoc)
 tic("Total")
 rm(tempDF)
 rf_list <- list()
-rf_list <- foreach (m=1:11) %dopar% {
+for (m in 1:11) {
+  tic(m)
   tempDF <- filter(sortedDF, mesec <= m)
   drops <- c("poraba")
   tempDF <- tempDF[ , !(names(tempDF) %in% drops)]
   rf_list[[m]] <- randomForest(norm_poraba ~ ., data = tempDF)
+  toc()
 }
 toc()
 ```
-
-
-```{r Dopolnilo Naključnih gozdov}
-library(randomForest)
-tic("Total")
-
-rf_list2 <- list()
-rf_list2 <- foreach (m=1) %do% {
-  tempDF <- filter(sortedDF, mesec <= m)
-  drops <- c("poraba")
-  tempDF <- tempDF[ , !(names(tempDF) %in% drops)]
-  rf_list2[m] <- randomForest(norm_poraba ~ ., data = tempDF)
-}
-toc()
-
-rf_list2
-```
-
 
 ```{r Napoved po Naključnem gozdu}
 tic("Total")
 predictedRF <- list()
-predictedRF <- foreach (i=1:11) %dopar% {
+for (i in 1:11) {
+  tic(i)
   tempDF <- filter(sortedDF, mesec == i+1)
   predictedRF[[i]] <- predict(rf_list[[i]], tempDF, type = "class")
+  toc()
 }
 toc()
 ```
@@ -693,9 +680,11 @@ for(i in 1:11){
 ```{r Izračun matrike napovedi Naključnega gozda}
 tic("Total")
 predictedMatRF <- list()
-predictedMatRF <- foreach (i=1:11) %dopar% {
+for(i in 1:11) {
+  tic(i)
   tempDF <- filter(sortedDF, mesec == i+1)
   predictedMatRF[[i]] <- predict(rf_list[[i]], tempDF, type = "prob")
+  toc()
 }
 col.order <- c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA")
 toc()
@@ -730,7 +719,6 @@ for (i in 1:11) {
 tempDF <- sortedDF
 drops <- c("poraba")
 tempDF <- tempDF[ , !(names(tempDF) %in% drops)]
-tempDF$stavba <- as.factor(tempDF$stavba)
 sort(attrEval(norm_poraba ~ ., data = tempDF, "InfGain"), decreasing = T)
 ``` 
 
@@ -889,6 +877,10 @@ for (i in 1:11) {
 }
 ```
 
+```{r}
+sortedDF_reduced$stavba <- as.double(sortedDF_reduced$stavba)
+summary(sortedDF_reduced)
+```
 
 
 ## Naključni gozd na izbranih atributih
@@ -898,39 +890,25 @@ library(randomForest)
 tic("Total")
 rm(tempDF)
 rf_list <- list()
-rf_list <- foreach (m=1:11) %dopar% {
+for (m in 1:11) {
+  tic(m)
   tempDF <- filter(sortedDF_reduced, mesec <= m)
   drops <- c("poraba")
   tempDF <- tempDF[ , !(names(tempDF) %in% drops)]
   rf_list[[m]] <- randomForest(norm_poraba ~ ., data = tempDF)
+  toc()
 }
 toc()
 ```
-
-
-```{r Dopolnilo Naključnih gozdov na izbranih atributih}
-library(randomForest)
-tic("Total")
-
-rf_list2 <- list()
-rf_list2 <- foreach (m=1) %do% {
-  tempDF <- filter(sortedDF_reduced, mesec <= m)
-  drops <- c("poraba")
-  tempDF <- tempDF[ , !(names(tempDF) %in% drops)]
-  rf_list2[m] <- randomForest(norm_poraba ~ ., data = tempDF)
-}
-toc()
-
-rf_list2
-```
-
 
 ```{r Napoved po Naključnem gozdu na izbranih atributih}
 tic("Total")
 predictedRF <- list()
-predictedRF <- foreach (i=1:11) %dopar% {
+for (i in 1:11) {
+  tic(i)
   tempDF <- filter(sortedDF_reduced, mesec == i+1)
   predictedRF[[i]] <- predict(rf_list[[i]], tempDF, type = "class")
+  toc()
 }
 toc()
 ```
@@ -983,9 +961,11 @@ for(i in 1:11){
 ```{r Izračun matrike napovedi Naključnega gozda na izbranih atributih}
 tic("Total")
 predictedMatRF <- list()
-predictedMatRF <- foreach (i=1:11) %dopar% {
+for (i in 1:11) {
+  tic(i)
   tempDF <- filter(sortedDF, mesec == i+1)
   predictedMatRF[[i]] <- predict(rf_list[[i]], tempDF, type = "prob")
+  toc()
 }
 col.order <- c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA")
 toc()
@@ -1012,66 +992,6 @@ for (i in 1:11) {
   cat(inf.score(filter(sortedDF_reduced, mesec <= i)$norm_poraba, filter(sortedDF_reduced, mesec == i+1)$norm_poraba, predictedMatRF[[i]]), "\n")
 }
 ```
-
-
-## Normaliziranje podatkovnega okvirja
-```{r Normalizacija zveznih podatkov}
-for (i in 1:12) {
-  
-}
-summary(sortedDF_reduced)
-
-names(sortedDF_reduced)
-```
-
-
-## Umetne nevronske mreže
-
-```{r Izračun Nevronske mreže}
-library(nnet)
-tic("Total")
-set.seed(0)
-nn_list <- list()
-
-nn_list <- foreach (m=1:11) %do% {
-  tempDF <- filter(sortedDF_reduced, mesec <= m)
-  nn_list[[m]] <- nnet(norm_poraba ~ ., data = tempDF, size = 5, decay = 0.0001, maxit = 10000)
-}
-toc()
-cat("\014")
-```
-
-
-```{r Napoved po Umetni nevronski mreži}
-tic("Total")
-predictedNN <- list()
-predictedNN <- foreach (i=1:11) %dopar% {
-  tempDF <- filter(sortedDF_reduced, mesec == i+1)
-  predictedNN[[i]] <- predict(nn_list[[i]], tempDF, type = "class")
-}
-toc()
-```
-
-### Analiza umetne nevronske mreže
-
-```{r Pravilnost rezultatov umetne nevronske mreže}
-cat("Pravilnost rezultatov \n")
-for(i in 1:11){
-  cat("Mesec =", i+1, " ->  ")
-  q <- filter(sortedDF_reduced, mesec == i+1)$norm_poraba == predictedNN[[i]]
-  cat(mean(q))
-  cat(" +/-", sd(q)/sqrt(length(q)), "\n")
-}
-```
-
-
-
-
-
-
-
-
-
 
 
 
