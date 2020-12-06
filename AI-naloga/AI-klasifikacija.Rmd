@@ -480,17 +480,15 @@ for(m in 1:20) {
 cat("\014")
 toc()
 
-i = 1
 tempDF <- filter(sortedDF, mesec == 2)
 predictedMatKInKNN <- list()
 tic("Predicting on 20 models")
-for (knn in knn_list_kInNN) {
-  predictedMatKInKNN[[i]] <- predict(knn, tempDF, type = "prob")
+bar <- foreach (i=1:20, .combine=c) %dopar% {
+  predictedMatKInKNN[[i]] <- predict(knn_list_kInNN[[i]], tempDF, type = "prob")
   bar <- sum((observedMat[[1]] - predictedMatKInKNN[[i]]) ^ 2) / nrow(predictedMatKInKNN[[i]])
-  cat("Barier's score za k =", i, "je", bar, "\n")
-  i = i + 1
 }
 toc()
+print(bar)
 ```
 
 
@@ -514,10 +512,8 @@ toc()
 tic("Total")
 predictedKNN <- list()
 predictedKNN <- foreach (i=1:11) %dopar% {
-  tic(i)
   tempDF <- filter(sortedDF, mesec == i+1)
   predictedKNN[[i]] <- predict(knn_list[[i]], tempDF, type = "class")
-  toc()
 }
 toc()
 ```
@@ -571,10 +567,8 @@ for(i in 1:11){
 tic("Total")
 predictedMatKNN <- list()
 predictedMatKNN <- foreach (i=1:11) %dopar% {
-  tic(i)
   tempDF <- filter(sortedDF, mesec == i+1)
   predictedMatKNN[[i]] <- predict(knn_list[[i]], tempDF, type = "prob")
-  toc()
 }
 col.order <- c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA")
 toc()
@@ -607,21 +601,37 @@ for (i in 1:11) {
 
 ```{r Izračun Naključnih gozdov}
 library(randomForest)
-tic("total")
-
-rf_list <- list()
+tic("Total")
 rm(tempDF)
+rf_list <- list()
 rf_list <- foreach (m=1:11) %dopar% {
-  tic(m)
   tempDF <- filter(sortedDF, mesec <= m)
-  
   drops <- c("poraba")
   tempDF <- tempDF[ , !(names(tempDF) %in% drops)]
   rf_list[[m]] <- randomForest(norm_poraba ~ ., data = tempDF)
-  rm(tempDF)
-  toc()
 }
 toc()
+```
+
+
+```{r Dopolnilo Naključnih gozdov}
+library(randomForest)
+tic("Total")
+
+rf_list2 <- list()
+rf_list2 <- foreach (m=1) %do% {
+  tempDF <- filter(sortedDF, mesec <= m)
+  drops <- c("poraba")
+  tempDF <- tempDF[ , !(names(tempDF) %in% drops)]
+  rf_list2[m] <- randomForest(norm_poraba ~ ., data = tempDF)
+}
+toc()
+
+rf_list2
+```
+
+```{r}
+rf_list
 ```
 
 
@@ -629,10 +639,8 @@ toc()
 tic("Total")
 predictedRF <- list()
 predictedRF <- foreach (i=1:11) %dopar% {
-  tic(i)
   tempDF <- filter(sortedDF, mesec == i+1)
   predictedRF[[i]] <- predict(rf_list[[i]], tempDF, type = "class")
-  toc()
 }
 toc()
 ```
@@ -686,10 +694,8 @@ for(i in 1:11){
 tic("Total")
 predictedMatRF <- list()
 predictedMatRF <- foreach (i=1:11) %dopar% {
-  tic(i)
   tempDF <- filter(sortedDF, mesec == i+1)
   predictedMatRF[[i]] <- predict(rf_list[[i]], tempDF, type = "prob")
-  toc()
 }
 col.order <- c("ZELONIZKA", "NIZKA", "SREDNJA", "VISOKA", "ZELOVISOKA")
 toc()
@@ -716,6 +722,12 @@ for (i in 1:11) {
   cat(inf.score(filter(sortedDF, mesec <= i)$norm_poraba, filter(sortedDF, mesec == i+1)$norm_poraba, predictedMatRF[[i]]), "\n")
 }
 ```
+
+
+## Ocena kvalitete artibutov
+
+
+
 
 
 ## Normaliziranje podatkovnega okvirja
@@ -761,7 +773,7 @@ for (knn in knn_list) {
 ## Testni chunk
 
 ```{r}
-head(p0Mat)
+rm(predictedMat)
 ```
 
 
